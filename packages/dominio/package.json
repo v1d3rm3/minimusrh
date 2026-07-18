@@ -1,0 +1,29 @@
+{
+  "name": "@minimusrh/dominio",
+  "version": "0.0.0",
+  "description": "Classes de domínio da aplicação",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "rimraf": "^6.0.1",
+    "typescript": "~5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "decimal.js": "~10.6.0"
+  }
+}
