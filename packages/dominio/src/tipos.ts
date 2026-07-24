@@ -13,3 +13,7 @@ export type Classificacao   = Brand<string, 'Classificacao'>;    // ex.: 'incide
 export type TipoFolhaChave  = Brand<string, 'TipoFolhaChave'>;   // ex.: 'mensal'
 export type DerivacaoChave  = Brand<string, 'DerivacaoChave'>;   // ex.: 'idade'
 export type RegraChave      = Brand<string, 'RegraChave'>;       // ex.: 'terco_ferias'
+
+export interface ErroValidacao {
+  readonly erro: string;
+}

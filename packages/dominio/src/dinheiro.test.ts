@@ -82,12 +82,50 @@ describe("Dinheiro", () => {
       expect(Dinheiro.de("2.345").arredondar("banqueiro").paraString()).toBe("2.34");
       expect(Dinheiro.de("2.355").arredondar("banqueiro").paraString()).toBe("2.36");
     });
+
+    describe("casos de borda ('2.005', '2.675' e seus negativos)", () => {
+      it.each([
+        ["2.005", "meio_para_cima", "2.01"],
+        ["2.005", "truncar", "2.00"],
+        ["2.005", "banqueiro", "2.00"],
+        ["2.675", "meio_para_cima", "2.68"],
+        ["2.675", "truncar", "2.67"],
+        ["2.675", "banqueiro", "2.68"],
+        ["-2.005", "meio_para_cima", "-2.01"],
+        ["-2.005", "truncar", "-2.00"],
+        ["-2.005", "banqueiro", "-2.00"],
+        ["-2.675", "meio_para_cima", "-2.68"],
+        ["-2.675", "truncar", "-2.67"],
+        ["-2.675", "banqueiro", "-2.68"],
+      ] as const)("%s.arredondar('%s') === '%s'", (valor, politica, esperado) => {
+        expect(Dinheiro.de(valor).arredondar(politica).paraString()).toBe(esperado);
+      });
+    });
   });
 
   describe("paraString()", () => {
     it("sempre retorna 2 casas decimais", () => {
       expect(Dinheiro.de("10").paraString()).toBe("10.00");
       expect(Dinheiro.de("10.1").paraString()).toBe("10.10");
+    });
+  });
+
+  describe("o teste-documento do float", () => {
+    // number NÃO representa dinheiro: em IEEE-754, 0.10 + 0.20 === 0.30000000000000004,
+    // e um loop de 10.000 somas de 0.01 em float acumula erro visível no resultado final.
+    // Dinheiro.de() só aceita string/bigint — a aritmética inteira é feita por decimal.js,
+    // então essas mesmas contas fecham exatas.
+    it("0.10 + 0.20 é exatamente '0.30' (não 0.30000000000000004, como em number)", () => {
+      expect(0.1 + 0.2).not.toBe(0.3); // documenta a armadilha que Dinheiro existe para evitar
+      expect(Dinheiro.de("0.10").somar(Dinheiro.de("0.20")).paraString()).toBe("0.30");
+    });
+
+    it("soma de 10.000 parcelas de '0.01' é exatamente '100.00'", () => {
+      let total = Dinheiro.zero();
+      for (let i = 0; i < 10_000; i++) {
+        total = total.somar(Dinheiro.de("0.01"));
+      }
+      expect(total.paraString()).toBe("100.00");
     });
   });
 });

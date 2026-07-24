@@ -1,5 +1,43 @@
 import { describe, expect, it } from "vitest";
-import { Competencia, type DataEfeito } from "./competencia.js";
+import { Competencia, dataEfeito, dataRegistro, type DataEfeito } from "./competencia.js";
+
+describe("dataEfeito()", () => {
+  it.each(["2026-03-15", "2024-02-29", "2000-01-01"])("aceita data válida: %s", (iso) => {
+    expect(dataEfeito(iso)).toBe(iso);
+  });
+
+  it.each([
+    "2026-02-30",     // fevereiro não tem dia 30
+    "2023-02-29",     // 2023 não é bissexto
+    "2026-13-01",     // mês inválido
+    "2026-00-01",     // mês inválido
+    "2026-04-31",     // abril tem 30 dias
+    "26-03-15",       // ano com menos de 4 dígitos
+    "2026-3-15",      // mês sem zero à esquerda
+    "2026-03-15T00:00:00Z", // não é data-de-efeito, é timestamp
+    "",
+  ])("rejeita data inválida: '%s'", (iso) => {
+    expect(() => dataEfeito(iso)).toThrow();
+  });
+});
+
+describe("dataRegistro()", () => {
+  it.each(["2026-03-15T00:00:00Z", "2026-03-15T10:30:00.123Z", "2026-03-15T10:30:00-03:00"])(
+    "aceita timestamp ISO válido: %s",
+    (iso) => {
+      expect(dataRegistro(iso)).toBe(iso);
+    },
+  );
+
+  it.each([
+    "2026-03-15",          // falta a parte de horário
+    "2026-13-15T00:00:00Z", // mês inválido
+    "não é uma data",
+    "",
+  ])("rejeita timestamp inválido: '%s'", (iso) => {
+    expect(() => dataRegistro(iso)).toThrow();
+  });
+});
 
 describe("Competencia", () => {
   describe("de()", () => {
@@ -31,14 +69,14 @@ describe("Competencia", () => {
   });
 
   describe("ultimas()", () => {
-    it("retorna n competências da mais nova pra mais velha, incluindo this", () => {
+    it("retorna n competências da mais antiga pra mais nova, incluindo this", () => {
       const janela = Competencia.de(2026, 3).ultimas(3);
-      expect(janela.map((c) => c.toString())).toEqual(["2026-03", "2026-02", "2026-01"]);
+      expect(janela.map((c) => c.toString())).toEqual(["2026-01", "2026-02", "2026-03"]);
     });
 
     it("cruza a virada de ano quando necessário", () => {
       const janela = Competencia.de(2026, 2).ultimas(4);
-      expect(janela.map((c) => c.toString())).toEqual(["2026-02", "2026-01", "2025-12", "2025-11"]);
+      expect(janela.map((c) => c.toString())).toEqual(["2025-11", "2025-12", "2026-01", "2026-02"]);
     });
 
     it.each([0, -1, 1.5])("lança erro para n inválido: %s", (n) => {
