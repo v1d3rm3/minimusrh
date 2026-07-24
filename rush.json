@@ -340,6 +340,10 @@
       "packageName": "@minimusrh/dominio",
       "projectFolder": "packages/dominio"
     },
+    {
+      "packageName": "@minimusrh/motor",
+      "projectFolder": "packages/motor"
+    },
     // {
     //   /**
     //    * The NPM package name of the project (must match package.json)
