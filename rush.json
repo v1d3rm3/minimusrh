@@ -344,6 +344,10 @@
       "packageName": "@minimusrh/motor",
       "projectFolder": "packages/motor"
     },
+    {
+      "packageName": "@minimusrh/persistencia",
+      "projectFolder": "packages/persistencia"
+    },
     // {
     //   /**
     //    * The NPM package name of the project (must match package.json)
