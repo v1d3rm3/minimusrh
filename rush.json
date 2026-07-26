@@ -348,6 +348,10 @@
       "packageName": "@minimusrh/persistencia",
       "projectFolder": "packages/persistencia"
     },
+    {
+      "packageName": "@minimusrh/regras-alrn",
+      "projectFolder": "packages/regras-alrn"
+    },
     // {
     //   /**
     //    * The NPM package name of the project (must match package.json)
