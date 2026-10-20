@@ -9,6 +9,7 @@ export interface VersaoRubrica extends ComVigencia {
   readonly versao: number;
   readonly dataEfeito: DataEfeito;
   readonly dataRegistro: DataRegistro;   // publicação (§1.4)
+  
   readonly nome: string;
   readonly natureza: NaturezaRubrica;
   readonly classificacoes: ReadonlySet<Classificacao>;   // 'incide_previdencia', 'compoe_terco'...
