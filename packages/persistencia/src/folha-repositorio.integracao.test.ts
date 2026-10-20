@@ -215,4 +215,41 @@ describe("folha-repositorio-pg (integracao)", () => {
     const somaEsperada = tresRegistros.reduce((acumulado, registro) => acumulado.somar(registro.valor), Dinheiro.zero());
     expect(somaNoBanco.rows[0]?.soma).toBe(somaEsperada.paraString());
   });
+
+  it("listarRegistros devolve os registros da folha na ordem de insercao, reidratados (Dinheiro via string)", async () => {
+    const repositorio = folhaRepositorioPg(ambiente.poolApp);
+    const id = await repositorio.criar({
+      competencia: Competencia.de(2026, 7),
+      tipo: TIPO_MENSAL,
+      estado: "em_conferencia",
+      corte: dataRegistro("2026-07-10T00:00:00Z"),
+    });
+    const folhaAtual = (await repositorio.buscarPorId(id)) as Folha;
+    const historiaId = randomUUID() as HistoriaId;
+    const registros: RegistroCalculo[] = ["z", "a"].map((sufixo) => ({
+      folhaId: id,
+      historiaId,
+      rubrica: `rubrica-${sufixo}` as RubricaChave,
+      versaoRubrica: 1,
+      regra: `regra-${sufixo}` as RegraChave,
+      versaoRegra: 2,
+      valor: Dinheiro.de("10.05"),
+      explicacao: { descricao: sufixo, fontes: [] },
+    }));
+
+    expect(await repositorio.listarRegistros(id)).toEqual([]);
+
+    await repositorio.persistirTransicao(
+      {
+        folha: { ...folhaAtual, estado: "fechada" },
+        transicao: { folhaId: id, de: "em_conferencia", para: "fechada", instante: dataRegistro("2026-07-11T00:00:00Z"), autor: AUTOR_TESTE },
+      },
+      registros,
+    );
+
+    const lidos = await repositorio.listarRegistros(id);
+    expect(lidos.map((r) => r.rubrica)).toEqual(["rubrica-z", "rubrica-a"]);
+    expect(lidos[0]?.valor.paraString()).toBe("10.05");
+    expect(lidos[0]).toMatchObject({ folhaId: id, historiaId, versaoRubrica: 1, versaoRegra: 2, explicacao: { descricao: "z", fontes: [] } });
+  });
 });

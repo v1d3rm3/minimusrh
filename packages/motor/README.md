@@ -30,7 +30,7 @@ contratos definidos em `@minimusrh/dominio`.
 ## O que NÃO é
 
 Zero banco, zero NestJS, zero regras concretas, zero relógio (todas as datas chegam de
-fora). Não implementa o `LeitorDeJanelas` real (fica para o Módulo 5, sobre folhas
+fora). Não implementa o `LeitorDeJanelas` real (mora em `app-folha`, sobre folhas
 FECHADAS) nem retroatividade (Módulo 6 — que reaproveita `calcularFolha` duas vezes e faz
 uma subtração, sem lógica nova).
 

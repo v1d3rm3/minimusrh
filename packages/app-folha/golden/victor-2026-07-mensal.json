@@ -1,0 +1,84 @@
+[
+  {
+    "explicacao": {
+      "descricao": "regra 'contribuicao_previdencia' v1 calcula 'contribuicao_previdencia'",
+      "fontes": [
+        {
+          "no": {
+            "descricao": "soma das rubricas com 'incide_previdencia'",
+            "fontes": [
+              {
+                "chave": "salario_base",
+                "tipo": "rubrica",
+                "valor": "6200.00"
+              }
+            ],
+            "valor": "6200.00"
+          },
+          "tipo": "no"
+        }
+      ],
+      "valor": "665.50"
+    },
+    "folhaId": "folha:mensal@2026-07",
+    "historiaId": "historia:victor",
+    "regra": "contribuicao_previdencia",
+    "rubrica": "contribuicao_previdencia",
+    "valor": "665.50",
+    "versaoRegra": 1,
+    "versaoRubrica": 1
+  },
+  {
+    "explicacao": {
+      "descricao": "regra 'salario_base' v1 calcula 'salario_base'",
+      "fontes": [
+        {
+          "no": {
+            "descricao": "derivação 'cargo' v1",
+            "fontes": [
+              {
+                "chave": "cargo",
+                "tipo": "derivacao",
+                "valor": "B8"
+              },
+              {
+                "fatoId": "fato:posse@2020-03-01",
+                "tipo": "fato"
+              },
+              {
+                "fatoId": "fato:promocao@2026-02-15",
+                "tipo": "fato"
+              }
+            ]
+          },
+          "tipo": "no"
+        },
+        {
+          "no": {
+            "descricao": "derivação 'dias_trabalhados' v1",
+            "fontes": [
+              {
+                "chave": "dias_trabalhados",
+                "tipo": "derivacao",
+                "valor": "{\"dias\":30,\"diasNoMes\":30}"
+              },
+              {
+                "fatoId": "fato:posse@2020-03-01",
+                "tipo": "fato"
+              }
+            ]
+          },
+          "tipo": "no"
+        }
+      ],
+      "valor": "6200.00"
+    },
+    "folhaId": "folha:mensal@2026-07",
+    "historiaId": "historia:victor",
+    "regra": "salario_base",
+    "rubrica": "salario_base",
+    "valor": "6200.00",
+    "versaoRegra": 1,
+    "versaoRubrica": 1
+  }
+]

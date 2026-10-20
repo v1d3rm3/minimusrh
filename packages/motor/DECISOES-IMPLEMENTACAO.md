@@ -139,6 +139,9 @@ runtime.
 
 ## 8. `NoExplicacao` só cita fontes `'derivacao'` e `'rubrica'`
 
+> **Revista no Módulo 5 — ver #13.** A explicação passou a citar fatos (`'fato'`) e a usar
+> sub-árvores (`'no'`) sem abrir a `LinhaDoTempo` para a regra.
+
 **Contexto:** `FonteExplicacao` (dominio) tem 5 variantes: `'fato'`, `'derivacao'`,
 `'rubrica'`, `'tabela'`, `'no'`. O motor só consegue popular duas delas a partir do que
 `Contexto` expõe.
@@ -205,3 +208,71 @@ nunca é redefinido localmente (só importado de `@minimusrh/dominio`).
 
 **Por quê:** consistência com a decisão já tomada e revisada no pacote `dominio`; critério de
 aceite do Módulo 2 permite explicitamente essa alternativa.
+
+---
+
+## 12. `LeitorDeJanelas` recebe a `historiaId` (revisão no Módulo 5)
+
+**Contexto:** o Módulo 5 implementou o `LeitorDeJanelas` real (`app-folha`). O contrato do
+Módulo 2 era `agregado(consulta)`/`contagem(consulta)`, e `ConsultaJanela` (dominio) só traz
+os quatro eixos de §5.4 (agregação, rubrica/classificação, competências, tipos de folha). Não
+diz de QUAL história. Mas o leitor é injetado uma vez por folha, não por história. Sem a
+história, "quanto esta pessoa recebeu nos últimos 12 meses" não tem resposta.
+
+**Opções:** (a) um leitor por história, com `calcularFolha` recebendo uma fábrica; (b)
+acrescentar `historiaId` à `ConsultaJanela` do dominio; (c) o motor passa `historiaId` ao
+leitor, junto com a consulta.
+
+**Decisão:** (c). A assinatura passa a ser `agregado(historiaId, consulta)` /
+`contagem(historiaId, consulta)`. `criarContexto` passa `params.linha.historiaId`.
+
+**Por quê:** (b) deixaria a regra escolher de quem ler, o que fura o isolamento de "a regra
+enxerga só o contexto da história corrente". (a) muda a forma da entrada sem ganho real. (c)
+é a menor mudança: a regra continua sem ver nem escolher a história, e o `Contexto` do
+dominio fica intocado.
+
+---
+
+## 13. Proveniência: a explicação cita fatos via observador de leituras (revisão no Módulo 5)
+
+**Contexto:** o critério do Módulo 5 pede que o extrato do `salario_base` do Victor "mostre
+cargo, fato de origem e versão da regra". A #8 registrava que o motor não sabia citar
+fatos, porque `Contexto` devolve só valores (Design §11 decisão 6).
+
+**Opções:** (a) as derivações da ALRN devolverem o fato junto do valor (`{cargo, fatoId}`),
+o que muda o contrato das regras e vaza proveniência para o domínio da instituição; (b) o
+`app-folha` recomputar as derivações fora do motor para descobrir os fatos, o que duplica a
+execução e permite divergir; (c) o motor observar o que cada derivação consulta na
+`LinhaDoTempo`, já que é ele quem a entrega a `derivar()`.
+
+**Decisão:** (c). `ParametrosContexto.observador?` (`ObservadorDeLeituras`) recebe:
+- `derivacaoLida({chave, versao, valor, fatos})` a cada leitura de derivação. Os `fatos` são
+  coletados por um decorator de `LinhaDoTempo` (`rastrearFatos`) que anota todo fato
+  devolvido por `vigenteEm`, `todosDoTipo`, `aberturaDaHistoria` e `encerramentoDaHistoria`;
+- `fatoLido(tipo, fatoId)` a cada `vigente`/`existe` da regra.
+
+`calcularFolha` liga o observador e monta a explicação assim:
+- derivação **sem** fatos consultados: fonte plana `'derivacao'`, como antes;
+- derivação **com** fatos: sub-árvore `'no'` ("derivação 'cargo' v1") contendo a fonte
+  `'derivacao'` e uma fonte `'fato'` por fato consultado;
+- soma por classificação (`somaDasRubricasCom`): sub-árvore `'no'` ("soma das rubricas com
+  'incide_previdencia'" = total) com uma fonte `'rubrica'` por parcela. Para isso o
+  observador também recebe `classificacaoLida(classificacao, total, parcelas)`;
+- fato lido direto pela regra: fonte `'fato'` no nível da regra;
+- leituras repetidas da mesma chave na mesma regra (ex.: `quando` e `calcular` lendo
+  `cargo`) são citadas **uma vez**.
+
+Correção junto: o valor de uma derivação que devolve objeto (ex.: `dias_trabalhados` =
+`{dias, diasNoMes}`) saía como `"[object Object]"` (`String(valor)`). Agora sai em JSON. O
+golden test do Módulo 5 expôs o bug.
+
+**Por quê:** a regra continua sem acesso à `LinhaDoTempo` e nenhum contrato do dominio muda.
+A proveniência é um fato da execução, não da regra. A versão da derivação também passa a
+constar, o que é necessário para reprodutibilidade (§1.4).
+
+**Limitação assumida:** "consultado" não é o mesmo que "escolhido". A derivação `cargo` lê
+os vigentes de `posse` **e** de `promocao` e fica com o mais recente, e os dois são citados.
+`todosDoTipo` cita a lista inteira. Isso é honesto (todos foram insumo da decisão), mas o
+extrato mostra mais fatos do que o "decisivo". Distinguir os dois exigiria que a derivação
+declarasse a escolha, o que voltaria à opção (a).
+

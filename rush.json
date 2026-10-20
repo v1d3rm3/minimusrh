@@ -352,6 +352,10 @@
       "packageName": "@minimusrh/regras-alrn",
       "projectFolder": "packages/regras-alrn"
     },
+    {
+      "packageName": "@minimusrh/app-folha",
+      "projectFolder": "packages/app-folha"
+    },
     // {
     //   /**
     //    * The NPM package name of the project (must match package.json)

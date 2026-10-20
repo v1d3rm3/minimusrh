@@ -220,3 +220,26 @@ exercitando `vigenteEm` sobre ESSE tipo único.
 sobre fatos vindos do banco, a query de exclusão de substituídos) sem inventar a lógica de
 derivação que pertence ao Módulo 4 — permanece fiel ao "não implemente lógica de cálculo,
 decisões de negócio" do escopo do Módulo 3.
+
+---
+
+## 10. Exportações e `listarRegistros` acrescentados no Módulo 5
+
+**Contexto:** `app-folha` (Módulo 5) precisa (i) subir o mesmo schema nos seus testes de
+integração e no `demo:victor`, (ii) ler `registro_calculo` no `LeitorDeJanelas` real, que o
+playbook coloca em `app-folha` e não aqui, e (iii) reler os registros de uma folha fechada
+para o golden test.
+
+**Decisão:**
+- `DIRETORIO_MIGRACOES` (`bootstrap`/`schema`), resolvido a partir da raiz do pacote, vale
+  rodando de `src/` ou de `dist/`. O suporte de teste daqui passou a usá-lo também.
+- `linhaParaRegistroCalculo`, `SELECT_REGISTRO_CALCULO` e `LinhaRegistroCalculo` exportados.
+  O NUMERIC ⇄ `Dinheiro` continua com um único dono.
+- `FolhaRepositorio.listarRegistros(folhaId)`, em ordem de inserção (= ordem do motor).
+
+**Por quê:** copiar migrações para outro pacote criaria dois schemas que podem divergir.
+Exportar o mapeamento evita uma segunda conversão NUMERIC→dinheiro escrita à mão.
+
+**Achado registrado (ver `app-folha` DECISOES #7):** `timestamptz` volta do banco como
+`…00.000Z`, não necessariamente na forma em que foi gravado. Como `DataRegistro` é comparada
+como texto, isso importa na fronteira do corte.
