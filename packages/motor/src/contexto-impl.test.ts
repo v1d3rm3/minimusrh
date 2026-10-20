@@ -18,7 +18,7 @@ import type {
   VersaoRubrica,
 } from "@minimusrh/dominio";
 import { describe, expect, it, vi } from "vitest";
-import { criarContexto, type LeitorDeJanelas } from "./contexto-impl.js";
+import { criarContexto, type LeitorDeJanelas, type ObservadorDeLeituras, type ProvenienciaDerivacao } from "./contexto-impl.js";
 
 const DATA_REFERENCIA = "2026-03-31" as DataEfeito;
 const CORTE = "2026-04-15T00:00:00Z" as DataRegistro;
@@ -259,8 +259,9 @@ describe("criarContexto", () => {
 
     expect(ctx.agregado(consulta).paraString()).toBe("55.00");
     expect(ctx.contagem(consulta)).toBe(7);
-    expect(leitor.agregado).toHaveBeenCalledWith(consulta);
-    expect(leitor.contagem).toHaveBeenCalledWith(consulta);
+    // a historiaId vem da linha corrente — ConsultaJanela não carrega história (DECISOES #12)
+    expect(leitor.agregado).toHaveBeenCalledWith("h1", consulta);
+    expect(leitor.contagem).toHaveBeenCalledWith("h1", consulta);
   });
 
   it("vigente() devolve o conteúdo do fato vigente na data de referência", () => {
@@ -343,5 +344,162 @@ describe("criarContexto", () => {
     expect(ctx.competencia).toBe(COMPETENCIA);
     expect(ctx.tipoFolha).toBe(MENSAL);
     expect(ctx.dataReferencia).toBe(DATA_REFERENCIA);
+  });
+
+  describe("observador de leituras (proveniência — DECISOES #13)", () => {
+    function observadorQueGrava(): ObservadorDeLeituras & {
+      readonly derivacoes: ProvenienciaDerivacao[];
+      readonly fatos: [TipoFatoChave, FatoId | undefined][];
+      readonly classificacoes: [Classificacao, string, [RubricaChave, string][]][];
+    } {
+      const derivacoes: ProvenienciaDerivacao[] = [];
+      const fatos: [TipoFatoChave, FatoId | undefined][] = [];
+      const classificacoes: [Classificacao, string, [RubricaChave, string][]][] = [];
+      return {
+        derivacoes,
+        fatos,
+        classificacoes,
+        derivacaoLida: (p) => derivacoes.push(p),
+        fatoLido: (tipo, fatoId) => fatos.push([tipo, fatoId]),
+        classificacaoLida: (c, total, parcelas) =>
+          classificacoes.push([c, total.paraString(), parcelas.map((p) => [p.rubrica, p.valor.paraString()])]),
+      };
+    }
+
+    it("somaDasRubricasCom() notifica o total e as parcelas que o compõem", () => {
+      const observador = observadorQueGrava();
+      const incide = "incide_previdencia" as Classificacao;
+      const ctx = criarContexto({
+        linha: linhaFake(),
+        competencia: COMPETENCIA,
+        tipoFolha: MENSAL,
+        dataReferencia: DATA_REFERENCIA,
+        corte: CORTE,
+        registroDeDerivacoes: registroDerivacoesFake(new Map()),
+        rubricasResolvidas: new Map([
+          ["salario" as RubricaChave, versaoRubrica({ classificacoes: new Set([incide]) })],
+          ["auxilio" as RubricaChave, versaoRubrica()],
+        ]),
+        rubricasCalculadas: new Map([
+          ["salario" as RubricaChave, Dinheiro.de("100")],
+          ["auxilio" as RubricaChave, Dinheiro.de("7")],
+        ]),
+        leitorJanelas: leitorJanelasFake(),
+        observador,
+      });
+
+      ctx.somaDasRubricasCom(incide);
+      expect(observador.classificacoes).toEqual([[incide, "100.00", [["salario", "100.00"]]]]);
+    });
+
+    function fatoComId(id: string): Fato {
+      return { ...fatoFake(), id: id as FatoId };
+    }
+
+    it("cita a versão e os fatos que a derivação consultou, sem repetição, por qualquer das quatro portas da LinhaDoTempo", () => {
+      const observador = observadorQueGrava();
+      const linha = linhaFake({
+        vigenteEm: () => fatoComId("vigente") as never,
+        todosDoTipo: () => [fatoComId("todos-1"), fatoComId("todos-2")] as never,
+        aberturaDaHistoria: () => fatoComId("abertura"),
+        encerramentoDaHistoria: () => fatoComId("encerramento"),
+      });
+      const derivar = (l: LinhaDoTempo) => {
+        l.vigenteEm("t" as TipoFatoChave, DATA_REFERENCIA);
+        l.vigenteEm("t" as TipoFatoChave, DATA_REFERENCIA);
+        l.todosDoTipo("t" as TipoFatoChave);
+        l.aberturaDaHistoria();
+        l.encerramentoDaHistoria();
+        return "B8";
+      };
+      const ctx = criarContexto({
+        linha,
+        competencia: COMPETENCIA,
+        tipoFolha: MENSAL,
+        dataReferencia: DATA_REFERENCIA,
+        corte: CORTE,
+        registroDeDerivacoes: registroDerivacoesFake(
+          new Map([["cargo" as DerivacaoChave, { chave: "cargo" as DerivacaoChave, versoes: [versaoDerivacao({ versao: 3, derivar })] }]]),
+        ),
+        rubricasResolvidas: new Map(),
+        rubricasCalculadas: new Map(),
+        leitorJanelas: leitorJanelasFake(),
+        observador,
+      });
+
+      expect(ctx.derivacao("cargo" as DerivacaoChave)).toBe("B8");
+      expect(observador.derivacoes).toEqual([
+        { chave: "cargo", versao: 3, valor: "B8", fatos: ["vigente", "todos-1", "todos-2", "abertura", "encerramento"] },
+      ]);
+    });
+
+    it("derivação sem implementação ou sem versão vigente também notifica (versão e valor undefined)", () => {
+      const observador = observadorQueGrava();
+      const ctx = criarContexto({
+        linha: linhaFake(),
+        competencia: COMPETENCIA,
+        tipoFolha: MENSAL,
+        dataReferencia: DATA_REFERENCIA,
+        corte: CORTE,
+        registroDeDerivacoes: registroDerivacoesFake(new Map()),
+        rubricasResolvidas: new Map(),
+        rubricasCalculadas: new Map(),
+        leitorJanelas: leitorJanelasFake(),
+        observador,
+      });
+
+      expect(ctx.derivacao("inexistente" as DerivacaoChave)).toBeUndefined();
+      expect(observador.derivacoes).toEqual([{ chave: "inexistente", versao: undefined, valor: undefined, fatos: [] }]);
+    });
+
+    it("encerramento ausente não é citado", () => {
+      const observador = observadorQueGrava();
+      const derivar = (l: LinhaDoTempo) => l.encerramentoDaHistoria();
+      const ctx = criarContexto({
+        linha: linhaFake(),
+        competencia: COMPETENCIA,
+        tipoFolha: MENSAL,
+        dataReferencia: DATA_REFERENCIA,
+        corte: CORTE,
+        registroDeDerivacoes: registroDerivacoesFake(
+          new Map([["fim" as DerivacaoChave, { chave: "fim" as DerivacaoChave, versoes: [versaoDerivacao({ derivar })] }]]),
+        ),
+        rubricasResolvidas: new Map(),
+        rubricasCalculadas: new Map(),
+        leitorJanelas: leitorJanelasFake(),
+        observador,
+      });
+
+      ctx.derivacao("fim" as DerivacaoChave);
+      expect(observador.derivacoes[0]?.fatos).toEqual([]);
+    });
+
+    it("vigente()/existe() notificam o fato lido diretamente pela regra (ou undefined quando não há)", () => {
+      const observador = observadorQueGrava();
+      const tipo = "comprovacao_plano_saude" as TipoFatoChave;
+      const params = {
+        competencia: COMPETENCIA,
+        tipoFolha: MENSAL,
+        dataReferencia: DATA_REFERENCIA,
+        corte: CORTE,
+        registroDeDerivacoes: registroDerivacoesFake(new Map()),
+        rubricasResolvidas: new Map(),
+        rubricasCalculadas: new Map(),
+        leitorJanelas: leitorJanelasFake(),
+        observador,
+      };
+      const comFato = criarContexto({ ...params, linha: linhaFake({ vigenteEm: () => fatoComId("plano") as never }) });
+      const semFato = criarContexto({ ...params, linha: linhaFake() });
+
+      comFato.vigente(tipo);
+      comFato.existe(tipo);
+      semFato.existe(tipo);
+
+      expect(observador.fatos).toEqual([
+        [tipo, "plano"],
+        [tipo, "plano"],
+        [tipo, undefined],
+      ]);
+    });
   });
 });

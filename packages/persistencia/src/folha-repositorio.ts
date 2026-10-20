@@ -11,7 +11,12 @@ import {
   type LinhaFolha,
   type LinhaTransicaoFolha,
 } from "./mapeamento-folha.js";
-import { registroCalculoParaParametrosInsercao } from "./mapeamento-registro-calculo.js";
+import {
+  linhaParaRegistroCalculo,
+  registroCalculoParaParametrosInsercao,
+  SELECT_REGISTRO_CALCULO,
+  type LinhaRegistroCalculo,
+} from "./mapeamento-registro-calculo.js";
 import { withTransacao } from "./pool.js";
 
 // folha-repositorio.ts — persiste o resultado PURO de motor::ciclo-folha::transitar
@@ -32,6 +37,9 @@ export interface FolhaRepositorio {
   criar(folha: NovaFolha): Promise<FolhaId>;
   buscarPorId(id: FolhaId): Promise<Folha | undefined>;
   listarTransicoes(folhaId: FolhaId): Promise<readonly TransicaoFolha[]>;
+
+  /** Registros de cálculo persistidos no fechamento, na ordem de inserção (= ordem do motor). */
+  listarRegistros(folhaId: FolhaId): Promise<readonly RegistroCalculo[]>;
 
   /**
    * UPDATE em `folha` (estado/corte/folhas_consumidas) + INSERT em `transicao_folha`
@@ -73,6 +81,14 @@ export function folhaRepositorioPg(pool: Pool): FolhaRepositorio {
         [folhaId],
       );
       return resultado.rows.map(linhaParaTransicao);
+    },
+
+    async listarRegistros(folhaId: FolhaId): Promise<readonly RegistroCalculo[]> {
+      const resultado = await pool.query<LinhaRegistroCalculo>(
+        `SELECT ${SELECT_REGISTRO_CALCULO} FROM registro_calculo WHERE folha_id = $1 ORDER BY id`,
+        [folhaId],
+      );
+      return resultado.rows.map(linhaParaRegistroCalculo);
     },
 
     async persistirTransicao(

@@ -10,6 +10,46 @@ importers:
 
   .: {}
 
+  ../../packages/app-folha:
+    dependencies:
+      '@minimusrh/dominio':
+        specifier: workspace:*
+        version: link:../dominio
+      '@minimusrh/motor':
+        specifier: workspace:*
+        version: link:../motor
+      '@minimusrh/persistencia':
+        specifier: workspace:*
+        version: link:../persistencia
+      '@minimusrh/regras-alrn':
+        specifier: workspace:*
+        version: link:../regras-alrn
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+    devDependencies:
+      '@testcontainers/postgresql':
+        specifier: ^12.0.4
+        version: 12.0.4
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.13.3
+      '@types/pg':
+        specifier: ^8.20.0
+        version: 8.20.0
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.7(vitest@3.2.7(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.1.3
+      typescript:
+        specifier: ~5.9.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0)
+
   ../../packages/dominio:
     dependencies:
       decimal.js:

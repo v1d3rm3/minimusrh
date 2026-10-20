@@ -1,5 +1,17 @@
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runner } from "node-pg-migrate";
 import type { ConexaoBanco } from "./pool.js";
+
+// `migrations/` mora na raiz do pacote — um nível acima tanto de `src/` quanto de `dist/`,
+// então o mesmo caminho relativo vale rodando do fonte (vitest) ou do build. Exportado
+// para que outros pacotes (app-folha, Módulo 5) subam o mesmo schema sem copiar arquivos.
+const RAIZ_PACOTE = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+export const DIRETORIO_MIGRACOES = {
+  bootstrap: join(RAIZ_PACOTE, "migrations", "bootstrap"),
+  schema: join(RAIZ_PACOTE, "migrations", "schema"),
+} as const;
 
 /**
  * Migração em duas fases (DECISOES #2): "bootstrap" cria as roles `minimus_migracao`/

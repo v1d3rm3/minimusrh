@@ -1,8 +1,6 @@
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import type { Pool } from "pg";
-import { rodarMigracaoBootstrap, rodarMigracaoSchema } from "../migrar.js";
+import { DIRETORIO_MIGRACOES, rodarMigracaoBootstrap, rodarMigracaoSchema } from "../migrar.js";
 import { criarPool, type ConexaoBanco } from "../pool.js";
 
 // ambiente-integracao.ts — suporte de teste (NÃO é `*.test.ts`): sobe um Postgres
@@ -16,9 +14,8 @@ const SENHA_SUPERUSUARIO = "minimus_super_teste";
 const SENHA_MIGRACAO = "minimus_migracao_dev";
 const SENHA_APP = "minimus_app_dev";
 
-const RAIZ_PACOTE = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const DIR_MIGRACOES_BOOTSTRAP = join(RAIZ_PACOTE, "migrations", "bootstrap");
-const DIR_MIGRACOES_SCHEMA = join(RAIZ_PACOTE, "migrations", "schema");
+const DIR_MIGRACOES_BOOTSTRAP = DIRETORIO_MIGRACOES.bootstrap;
+const DIR_MIGRACOES_SCHEMA = DIRETORIO_MIGRACOES.schema;
 
 export interface AmbienteIntegracao {
   readonly container: StartedPostgreSqlContainer;

@@ -4,7 +4,14 @@ export { montarGrafo, ErroRubricaProduzidaPorMaisDeUmaRegra, type Grafo, type Er
 
 export { resolverParaExecucao, ErroRubricaNaoResolvida, type ResolucaoTemporal } from "./resolucao.js";
 
-export { criarContexto, type LeitorDeJanelas, type ParametrosContexto } from "./contexto-impl.js";
+export {
+  criarContexto,
+  type LeitorDeJanelas,
+  type ObservadorDeLeituras,
+  type ParametrosContexto,
+  type ParcelaClassificacao,
+  type ProvenienciaDerivacao,
+} from "./contexto-impl.js";
 
 export {
   instrumentar,

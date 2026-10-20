@@ -11,6 +11,16 @@
    * "rush my-global-command --help".
    */
   "commands": [
+    {
+      "commandKind": "bulk",
+      "name": "test",
+      "summary": "Roda os testes (vitest run) de todos os projetos.",
+      "description": "Executa o script \"test\" de cada projeto, respeitando o grafo de dependências. Os testes de integração de persistencia e app-folha exigem Docker (Testcontainers).",
+      "safeForSimultaneousRushProcesses": false,
+      "enableParallelism": true,
+      "ignoreMissingScript": true,
+      "allowWarningsInSuccessfulBuild": true
+    },
     // {
     //   /**
     //    * (Required) Determines the type of custom command.

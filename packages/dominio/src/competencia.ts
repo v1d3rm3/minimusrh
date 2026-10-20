@@ -16,7 +16,7 @@ function diasNoMes(ano: number, mes: number): number {
 }
 
 const FORMATO_DATA_EFEITO = /^(\d{4})-(\d{2})-(\d{2})$/;
-const FORMATO_DATA_REGISTRO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+const FORMATO_DATA_REGISTRO = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|[+-](\d{2}):(\d{2}))$/;
 
 /** Porta única de construção de DataEfeito: 'YYYY-MM-DD', validada contra o calendário real. */
 export function dataEfeito(iso: string): DataEfeito {
@@ -31,12 +31,36 @@ export function dataEfeito(iso: string): DataEfeito {
   return iso as DataEfeito;
 }
 
-/** Porta única de construção de DataRegistro: timestamp ISO 8601 ('YYYY-MM-DDTHH:mm:ssZ'). */
+/**
+ * Porta única de construção de DataRegistro: aceita timestamp ISO 8601
+ * ('YYYY-MM-DDTHH:mm:ss[.sss](Z|±HH:mm)') e devolve SEMPRE a forma canônica
+ * 'YYYY-MM-DDTHH:mm:ss.sssZ' (UTC, milissegundos), a mesma que o Postgres devolve.
+ * DataRegistro é comparada como TEXTO (versaoVigente, corte), então o mesmo instante tem
+ * de ter uma única grafia: "…00Z" > "…00.000Z" lexicograficamente (DECISOES #11).
+ */
 export function dataRegistro(iso: string): DataRegistro {
-  if (!FORMATO_DATA_REGISTRO.test(iso) || Number.isNaN(new Date(iso).getTime())) {
-    throw new Error(`dataRegistro inválida (esperado timestamp ISO 8601): '${iso}'`);
+  const m = FORMATO_DATA_REGISTRO.exec(iso);
+  if (!m) throw new Error(`dataRegistro inválida (esperado timestamp ISO 8601): '${iso}'`);
+  // o parser do JS "rola" campos fora do intervalo (30/02 vira 02/03, 24:00 vira o dia
+  // seguinte) — calendário e relógio são validados aqui, antes de qualquer conversão.
+  try {
+    dataEfeito(m[1]!);
+  } catch {
+    throw new Error(`dataRegistro inválida (data fora do calendário): '${iso}'`);
   }
-  return iso as DataRegistro;
+  const [hora, minuto, segundo] = [m[2]!, m[3]!, m[4]!].map((g) => parseInt(g, 10)) as [number, number, number];
+  if (hora > 23 || minuto > 59 || segundo > 59) {
+    throw new Error(`dataRegistro inválida (horário fora do intervalo): '${iso}'`);
+  }
+  if (m[7] !== undefined && (parseInt(m[7], 10) > 23 || parseInt(m[8]!, 10) > 59)) {
+    throw new Error(`dataRegistro inválida (fuso fora do intervalo): '${iso}'`);
+  }
+  // abaixo do milissegundo o instante não é representável (nem pelo Date do JS, nem pelo
+  // mapeamento da persistência): truncar mudaria o instante calado, então recusa.
+  if (m[5] !== undefined && m[5].length > 3) {
+    throw new Error(`dataRegistro inválida (precisão abaixo de milissegundo): '${iso}'`);
+  }
+  return new Date(iso).toISOString() as DataRegistro;
 }
 
 export class Competencia {

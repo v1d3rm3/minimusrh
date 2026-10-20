@@ -111,7 +111,7 @@ function regrasMapa(regras: readonly VersaoRegra[]): ReadonlyMap<RegraChave, rea
 
 const DERIVACOES_VAZIAS: RegistroDeDerivacoes = { porChave: () => undefined };
 
-function registroDerivacoes(mapa: Readonly<Record<string, () => unknown>>): RegistroDeDerivacoes {
+function registroDerivacoes(mapa: Readonly<Record<string, VersaoDerivacao<unknown>["derivar"]>>): RegistroDeDerivacoes {
   const derivacoes = new Map<DerivacaoChave, Derivacao<unknown>>(
     Object.entries(mapa).map(([chave, derivar]) => {
       const versao: VersaoDerivacao<unknown> = {
@@ -358,6 +358,85 @@ describe("calcularFolha", () => {
     ]);
     expect(registroFinal?.explicacao.descricao).toContain("final");
     expect(registroFinal?.explicacao.valor).toBe("1.00");
+  });
+
+  it("derivação que consultou fatos vira sub-árvore citando-os; fato lido direto pela regra vira fonte 'fato'; leituras repetidas citam uma vez (DECISOES #13)", () => {
+    const posse = { ...fato("2020-01-01"), id: "fato-posse" as FatoId };
+    const plano = { ...fato("2026-01-01"), id: "fato-plano" as FatoId, tipo: "plano" as TipoFatoChave };
+    const regra = versaoRegra({
+      produz: "x",
+      quando: (ctx: Contexto) => ctx.derivacao("cargo" as DerivacaoChave) !== undefined && ctx.existe("plano" as TipoFatoChave),
+      calcular: (ctx: Contexto) => {
+        ctx.derivacao("cargo" as DerivacaoChave); // segunda leitura da mesma chave — citada uma vez
+        ctx.derivacao("constante" as DerivacaoChave); // não consulta fato nenhum — fonte plana
+        ctx.vigente("plano" as TipoFatoChave);
+        ctx.vigente("ausente" as TipoFatoChave); // nenhum fato vigente — nada a citar
+        return Dinheiro.de("1");
+      },
+    });
+
+    const resultado = calcularFolha(
+      entradaBase({
+        historias: [
+          linha("h1", {
+            vigenteEm: ((tipo: TipoFatoChave) => (tipo === "plano" ? plano : undefined)) as LinhaDoTempo["vigenteEm"],
+            aberturaDaHistoria: () => posse,
+          }),
+        ],
+        regras: regrasMapa([regra]),
+        rubricas: catalogoRubricas({ x: versaoRubrica() }),
+        derivacoes: registroDerivacoes({
+          cargo: (l: LinhaDoTempo) => (l.aberturaDaHistoria().id === "fato-posse" ? "B6" : undefined),
+          constante: () => 7,
+        }),
+      }),
+    );
+
+    expect(resultado.registros[0]?.explicacao.fontes).toEqual([
+      {
+        tipo: "no",
+        no: {
+          descricao: "derivação 'cargo' v1",
+          fontes: [
+            { tipo: "derivacao", chave: "cargo", valor: "B6" },
+            { tipo: "fato", fatoId: "fato-posse" },
+          ],
+        },
+      },
+      { tipo: "derivacao", chave: "constante", valor: "7" },
+      { tipo: "fato", fatoId: "fato-plano" },
+    ]);
+  });
+
+  it("valor de derivação objeto vira JSON (não '[object Object]'); soma por classificação vira sub-árvore com as parcelas, citada uma vez", () => {
+    const incide = "incide" as Classificacao;
+    const base = versaoRegra({ produz: "base", calcular: () => Dinheiro.de("100") });
+    const desconto = versaoRegra({
+      produz: "desconto",
+      consome: { derivacoes: ["dias" as DerivacaoChave], rubricas: [], classificacoes: [incide], tiposFato: [], janelas: [] },
+      quando: (ctx: Contexto) => !ctx.somaDasRubricasCom(incide).ehZero(),
+      calcular: (ctx: Contexto) => {
+        ctx.derivacao("dias" as DerivacaoChave);
+        return ctx.somaDasRubricasCom(incide).dividirPor(10);
+      },
+    });
+
+    const resultado = calcularFolha(
+      entradaBase({
+        historias: [linha("h1")],
+        regras: regrasMapa([base, desconto]),
+        rubricas: catalogoRubricas({ base: versaoRubrica({ classificacoes: new Set([incide]) }), desconto: versaoRubrica() }),
+        derivacoes: registroDerivacoes({ dias: () => ({ dias: 15, diasNoMes: 30 }) }),
+      }),
+    );
+
+    expect(resultado.registros.find((r) => r.rubrica === "desconto")?.explicacao.fontes).toEqual([
+      { tipo: "derivacao", chave: "dias", valor: '{"dias":15,"diasNoMes":30}' },
+      {
+        tipo: "no",
+        no: { descricao: "soma das rubricas com 'incide'", valor: "100.00", fontes: [{ tipo: "rubrica", chave: "base", valor: "100.00" }] },
+      },
+    ]);
   });
 
   it("exceção que não é instância de Error também é capturada, convertida para string", () => {
