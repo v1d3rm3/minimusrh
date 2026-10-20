@@ -22,20 +22,45 @@ describe("dataEfeito()", () => {
 });
 
 describe("dataRegistro()", () => {
-  it.each(["2026-03-15T00:00:00Z", "2026-03-15T10:30:00.123Z", "2026-03-15T10:30:00-03:00"])(
-    "aceita timestamp ISO válido: %s",
-    (iso) => {
-      expect(dataRegistro(iso)).toBe(iso);
-    },
-  );
+  it.each([
+    ["2026-03-15T00:00:00Z", "2026-03-15T00:00:00.000Z"],
+    ["2026-03-15T10:30:00.123Z", "2026-03-15T10:30:00.123Z"],
+    ["2026-03-15T10:30:00.5Z", "2026-03-15T10:30:00.500Z"],
+    ["2026-03-15T10:30:00-03:00", "2026-03-15T13:30:00.000Z"],
+    ["2026-03-15T01:00:00+02:00", "2026-03-14T23:00:00.000Z"],
+    ["2024-02-29T23:59:59.999Z", "2024-02-29T23:59:59.999Z"],
+  ])("aceita %s e devolve a forma canônica %s (UTC, milissegundos)", (iso, canonica) => {
+    expect(dataRegistro(iso)).toBe(canonica);
+  });
+
+  it("o mesmo instante em grafias diferentes vira a MESMA DataRegistro — comparação textual segura", () => {
+    const grafias = ["2026-08-01T00:00:00Z", "2026-08-01T00:00:00.000Z", "2026-07-31T21:00:00-03:00"].map(dataRegistro);
+    expect(new Set(grafias).size).toBe(1);
+    // o caso que motivou a canonização: sem ela, "…00Z" > "…00.000Z" e o fato ficaria fora do corte
+    expect(dataRegistro("2026-08-01T00:00:00Z") <= dataRegistro("2026-08-01T00:00:00.000Z")).toBe(true);
+  });
+
+  it("canônica é ponto fixo: canonizar de novo não muda nada", () => {
+    const uma = dataRegistro("2026-07-31T21:00:00-03:00");
+    expect(dataRegistro(uma)).toBe(uma);
+  });
 
   it.each([
-    "2026-03-15",          // falta a parte de horário
-    "2026-13-15T00:00:00Z", // mês inválido
+    "2026-03-15",                       // falta a parte de horário
+    "2026-13-15T00:00:00Z",             // mês inválido
+    "2026-02-30T00:00:00Z",             // dia fora do calendário (o Date do JS "rolaria" para 02/03)
+    "2025-02-29T00:00:00Z",             // 29/02 em ano não bissexto
+    "2026-03-15T24:00:00Z",             // hora 24 (o Date do JS rolaria para o dia seguinte)
+    "2026-03-15T10:60:00Z",             // minuto 60
+    "2026-03-15T10:30:60Z",             // segundo 60
+    "2026-03-15T10:30:00+24:00",        // fuso fora do intervalo
+    "2026-03-15T10:30:00+03:60",        // minuto de fuso fora do intervalo
+    "2026-03-15T10:30:00.123456Z",      // abaixo do milissegundo: truncar mudaria o instante
+    "2026-03-15T10:30:00",              // sem fuso: instante ambíguo
     "não é uma data",
     "",
   ])("rejeita timestamp inválido: '%s'", (iso) => {
-    expect(() => dataRegistro(iso)).toThrow();
+    expect(() => dataRegistro(iso)).toThrow(/dataRegistro inválida/);
   });
 });
 

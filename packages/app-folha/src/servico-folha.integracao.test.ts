@@ -8,6 +8,7 @@ import {
   TIPO_FATO_POSSE,
   criarCatalogoTiposDeFato,
 } from "@minimusrh/regras-alrn";
+import { serializarRegistros } from "./serializacao.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { agruparRegras, cadastroEmMemoria, configuracaoAlrn, type ConfiguracaoInstituicao } from "./configuracao.js";
 import { canonizarInstante, criarServicoFolha, ErroFechamentoComErros, ErroServicoFolha, type ServicoFolha } from "./servico-folha.js";
@@ -202,6 +203,37 @@ describe("servico-folha (integração)", () => {
       expect(await contarRegistros(id)).toBe(0);
       expect((await folhaRepositorioPg(ambiente.poolApp).listarTransicoes(id)).map((t) => t.para)).toEqual(["em_conferencia"]);
     });
+  });
+
+  describe("fronteira do corte (DECISOES #7)", () => {
+    // Grafias em que a ordem de TEXTO contradiz a ordem real, frente ao corte relido do banco
+    // ("2026-08-01T00:00:00.000Z"): "…00Z" > "…00.000Z"; e "01:00+02:00" (= 23:00Z do dia
+    // 31, antes do corte) > "00:00…". Sem a forma canônica única de DataRegistro, a v2 valia
+    // na simulação (corte informado) e sumia no fechamento (corte relido).
+    it.each(["2026-08-01T00:00:00Z", "2026-08-01T01:00:00+02:00"])(
+      "versão de regra publicada em %s (até o corte) vale igual na simulação, no fechamento e na reprodução",
+      async (publicadaEm) => {
+        const v2: VersaoRegra = {
+          ...REGRA_SALARIO_BASE_V1,
+          versao: 2,
+          dataEfeito: dataEfeito("2026-07-01"),
+          dataRegistro: dataRegistro(publicadaEm),
+          calcular: () => Dinheiro.de("9999.00"),
+        };
+        const s = servicoCom({ ...configuracaoAlrn(), regras: agruparRegras([...CATALOGO_REGRAS, v2]) });
+        const salario = (registros: readonly { rubrica: string; valor: Dinheiro }[]) =>
+          registros.find((r) => r.rubrica === "salario_base")?.valor.paraString();
+
+        const id = await s.abrir(JULHO, MENSAL);
+        const simulacao = await s.calcularSimulacao(id, DEPOIS_DA_PROMOCAO);
+        await s.travarCorte(id, DEPOIS_DA_PROMOCAO, AUTOR);
+        const { resultado } = await s.fechar(id, AUTOR, dataRegistro("2026-08-02T00:00:00Z"));
+
+        expect(salario(simulacao.resultado.registros)).toBe("9999.00");
+        expect(salario(resultado.registros)).toBe("9999.00");
+        expect(serializarRegistros((await s.reproduzir(id)).registros)).toBe(serializarRegistros(resultado.registros));
+      },
+    );
   });
 
   describe("folha fechada é terminal (Fundação §5.5: 'não existe reabrir. Nunca.')", () => {

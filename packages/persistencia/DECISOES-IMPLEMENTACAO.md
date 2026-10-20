@@ -240,6 +240,7 @@ para o golden test.
 **Por quê:** copiar migrações para outro pacote criaria dois schemas que podem divergir.
 Exportar o mapeamento evita uma segunda conversão NUMERIC→dinheiro escrita à mão.
 
-**Achado registrado (ver `app-folha` DECISOES #7):** `timestamptz` volta do banco como
-`…00.000Z`, não necessariamente na forma em que foi gravado. Como `DataRegistro` é comparada
-como texto, isso importa na fronteira do corte.
+**Achado registrado (ver `app-folha` DECISOES #7, `dominio` DECISOES #11):** `timestamptz`
+volta do banco como `…00.000Z` (o `to_char` dos mapeamentos), não necessariamente na forma
+em que foi gravado. Resolvido na porta `dataRegistro()` do dominio, que agora produz
+exatamente essa forma. O mapeamento daqui e a porta concordam por construção.

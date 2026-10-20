@@ -46,6 +46,9 @@ explícita do PROMPT vale.
 
 ## 3. Fábricas `dataEfeito()` / `dataRegistro()` (validação)
 
+> **`dataRegistro()` revista no Módulo 5 — ver #11.** Agora devolve a forma canônica e valida
+> calendário e relógio por conta própria.
+
 **Contexto:** o design doc mostra as assinaturas `dataEfeito = (iso) => valida(iso) as
 DataEfeito` sem definir `valida`. A regra inegociável #2 exige que toda data seja "validada
 nas factories".
@@ -178,3 +181,42 @@ nunca verifica os arquivos de teste — inclusive o teste de tipos com `@ts-expe
 **Por quê:** sem isso, um erro de tipo em qualquer `*.test.ts` — incluindo a prova de brands
 — passaria despercebido tanto no build quanto no `vitest run` (que roda sobre JS
 transpilado por esbuild, sem checagem de tipos).
+
+---
+
+## 11. `dataRegistro()` devolve forma canônica única e valida calendário/relógio (revisão no Módulo 5)
+
+**Contexto:** descoberto pelo golden test do Módulo 5 (`app-folha` DECISOES #7).
+`DataRegistro` é um `string` branded, comparado como **texto** em `versaoVigente` e em todo
+corte. A porta aceitava várias grafias do mesmo instante e as devolvia como vieram, enquanto
+o Postgres devolve sempre `YYYY-MM-DDTHH:mm:ss.sssZ`. A ordem de texto então contradiz a
+ordem real:
+- `"2026-08-01T00:00:00Z" > "2026-08-01T00:00:00.000Z"`: mesmo instante, mas "depois";
+- `"2026-08-01T01:00:00+02:00" > "2026-08-01T00:00:00.000Z"`, embora seja 23:00Z do dia 31,
+  **antes** do corte.
+
+Consequência concreta: uma versão de regra publicada no instante do corte valia na
+simulação (corte informado pelo chamador) e sumia no fechamento (corte relido do banco). O
+mesmo corte dava dois resultados. Na mesma investigação apareceu um segundo buraco: a
+validação delegava ao `Date` do JS, que **rola** campos fora do intervalo sem erro
+(`2026-02-30T…` vira 02/03, `24:00` vira o dia seguinte).
+
+**Opções:** (a) comparar instantes por valor numérico em vez de texto, o que exigiria mexer
+em `versaoVigente` e em todo consumidor; (b) canonizar só na persistência ou no serviço, o
+que deixa os catálogos (`dataRegistro("…00Z")`) de fora; (c) canonizar na porta única.
+
+**Decisão:** (c). `dataRegistro(iso)`:
+- aceita `YYYY-MM-DDTHH:mm:ss[.s{1,3}](Z|±HH:mm)`;
+- valida a data contra o calendário real (reusa `dataEfeito`), hora 00–23, minuto e segundo
+  00–59 e fuso até ±23:59;
+- **recusa** precisão abaixo do milissegundo, porque truncar mudaria o instante sem aviso;
+- **recusa** timestamp sem fuso, que é instante ambíguo (já recusava antes, pelo regex);
+- devolve `toISOString()`: UTC, sempre com milissegundos, igual ao que a persistência lê.
+
+**Por quê:** com uma única grafia por instante, a comparação de texto volta a ser a
+comparação de tempo, sem tocar em `versaoVigente` nem em nenhum consumidor. A forma canônica
+é ponto fixo (canonizar de novo não muda nada), então reaplicar a porta é sempre seguro.
+
+**Limitação:** valores criados por cast (`"…" as DataRegistro`, comum em testes) contornam
+a porta. O `app-folha` reaplica a porta a todo instante que recebe (`canonizarInstante`).
+

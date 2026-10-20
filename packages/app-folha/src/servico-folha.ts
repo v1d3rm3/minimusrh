@@ -29,13 +29,12 @@ import { carregarLeitorDeJanelasPg } from "./leitor-janelas-pg.js";
 // chamador (Regra Global #2 — o relógio mora só na `api`).
 
 /**
- * Forma canônica de um instante: a mesma que o Postgres devolve (`toISOString`, sempre com
- * milissegundos e 'Z'). `DataRegistro` é comparada como TEXTO no dominio, e
- * "…00Z" > "…00.000Z" lexicograficamente — sem canonizar, um fato registrado exatamente
- * no instante do corte entraria no fechamento e sairia na reprodução (DECISOES #7).
+ * Forma canônica de um instante (UTC, milissegundos — a mesma do Postgres). A porta
+ * `dataRegistro()` do dominio já canoniza; isto reaplica a porta a valores que possam ter
+ * chegado por cast (`"..." as DataRegistro`), que contornam a validação (DECISOES #7).
  */
 export function canonizarInstante(instante: DataRegistro): DataRegistro {
-  return dataRegistro(new Date(instante).toISOString());
+  return dataRegistro(instante);
 }
 
 export class ErroServicoFolha extends Error {

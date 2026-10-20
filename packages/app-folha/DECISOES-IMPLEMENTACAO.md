@@ -133,26 +133,23 @@ mudança consciente e revisada, nunca um "atualizar para passar".
 
 ---
 
-## 7. Instantes canonizados na entrada do serviço
+## 7. Instantes canonizados: corrigido na porta do dominio
 
 **Contexto:** descoberto pelo próprio teste. O Postgres devolve `timestamptz` como
-`2026-08-01T00:00:00.000Z`, e o chamador pode passar `2026-08-01T00:00:00Z`. `DataRegistro`
-é comparada como **texto** no dominio (`versaoVigente`, `linhaDoTempo`), e `"…00Z" >
-"…00.000Z"` lexicograficamente. Um fato registrado exatamente no instante do corte entraria
-no fechamento (corte informado sem milissegundos) e sairia na reprodução (corte relido do
-banco). Isso quebra a reprodutibilidade justamente na fronteira.
+`2026-08-01T00:00:00.000Z`, e o chamador pode passar `2026-08-01T00:00:00Z` ou um offset.
+`DataRegistro` é comparada como **texto** no dominio, e a ordem de texto contradiz a ordem
+real (`"…00Z" > "…00.000Z"`; `"01:00+02:00" > "00:00…Z"` mesmo sendo anterior). Uma versão
+de regra publicada no instante do corte valia na simulação e sumia no fechamento.
 
-**Decisão:** `canonizarInstante` (UTC, com milissegundos, igual ao `toISOString` e ao que o
-banco devolve) é aplicada a todo instante que entra no serviço: corte provisório, corte
-travado e instante de fechamento. A folha devolvida pelo serviço é idêntica à relida do
-banco (testado).
+**Decisão:** a correção mora na porta única `dataRegistro()` do dominio (dominio DECISOES
+#11), que agora devolve sempre a forma canônica do Postgres. Aqui, `canonizarInstante`
+reaplica a porta a todo instante que entra no serviço (corte provisório, corte travado e
+instante de fechamento), para cobrir valores que chegaram por cast. A folha devolvida pelo
+serviço é idêntica à relida do banco (testado).
 
-**Por quê:** é a menor correção que fecha o buraco dentro do escopo deste módulo.
-**Recomendação para o humano:** o lugar certo é a porta única `dataRegistro()` do dominio,
-que hoje valida o formato mas aceita offsets e precisões variadas. Canonizar ali protege
-todos os pacotes, inclusive as versões de regra e rubrica dos catálogos, escritas `…00Z`.
-Não mexi no dominio por ser o pacote-base já revisado. Vale decidir antes do Módulo 6, que
-compara cortes o tempo todo.
+**Teste de regressão:** "fronteira do corte" em `servico-folha.integracao.test.ts`, com as
+duas grafias problemáticas. Ele foi verificado **falhando** com as duas correções desfeitas e
+passando com elas.
 
 ---
 
