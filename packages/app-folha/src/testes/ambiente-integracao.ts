@@ -15,6 +15,8 @@ const SENHA_APP = "minimus_app_dev";
 export interface AmbienteIntegracao {
   readonly container: StartedPostgreSqlContainer;
   readonly poolApp: Pool;
+  /** Superusuário: só para testes que simulam adulteração por fora do serviço (Módulo 6). */
+  conexaoSuperusuario(): ConexaoBanco;
   encerrar(): Promise<void>;
 }
 
@@ -39,6 +41,7 @@ export async function subirAmbiente(): Promise<AmbienteIntegracao> {
   return {
     container,
     poolApp,
+    conexaoSuperusuario: () => conexaoPara(container, "minimus_super", SENHA_SUPERUSUARIO),
     async encerrar(): Promise<void> {
       await poolApp.end();
       await container.stop();

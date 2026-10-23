@@ -1,4 +1,4 @@
-// index.ts — exports públicos do pacote `app-folha` (Playbook Módulo 5)
+// index.ts — exports públicos do pacote `app-folha` (Playbook Módulos 5 e 6)
 
 export {
   agruparRegras,
@@ -27,6 +27,18 @@ export {
   type ParametrosLeitorJanelas,
 } from "./leitor-janelas-pg.js";
 
-export { fatosCitados, renderizarContracheque, renderizarExtrato, type OpcoesExtrato } from "./extrato.js";
+export { fatosCitados, renderizarContracheque, renderizarExplicacao, renderizarExtrato, type OpcoesExtrato } from "./extrato.js";
 
 export { serializarRegistros } from "./serializacao.js";
+
+export {
+  criarApuradorDeDiferencas,
+  diferencasEntre,
+  ErroApuracaoComErros,
+  ErroReprodutibilidadeViolada,
+  type ApuracaoCompetencia,
+  type ApuradorDeDiferencas,
+  type DiferencaApurada,
+} from "./apurar-diferencas.js";
+
+export { folhasAlcancadas, listarFolhasFechadas, type FolhaFechada, type Novidade } from "./alcance-retroativo.js";

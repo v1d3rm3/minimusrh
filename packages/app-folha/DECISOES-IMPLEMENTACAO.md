@@ -1,9 +1,10 @@
 # Decisões de implementação — pacote `app-folha`
 
-Ambiguidades e lacunas encontradas entre `docs/MinimusRH_Playbook_Implementacao.md` (Módulo
-5) e os documentos de design (Roteiro §3 Marcos 0–1; Fundação §5.2, §5.4, §5.5, §7.3)
+Ambiguidades e lacunas encontradas entre `docs/MinimusRH_Playbook_Implementacao.md` (Módulos
+5 e 6) e os documentos de design (Roteiro §3 Marcos 0–2; Fundação §5.2–§5.5, §7.3)
 durante a implementação, no formato *contexto → opções → decisão → por quê*.
-Revisão humana pendente (portão do playbook antes do Módulo 6).
+#1–#10: Módulo 5. #11–#17: Módulo 6 (retroatividade), com revisão humana pendente (portão
+obrigatório do playbook antes do Módulo 7).
 
 ---
 
@@ -193,3 +194,125 @@ fora dessas duas pastas. O script é `rushx demo:victor` (exige build e Docker).
 
 **Por quê:** o critério de aceite pede um script que rode o fluxo real. Subir o mesmo
 ambiente dos testes garante que o demo mostra exatamente o que o golden prova.
+
+---
+
+# Módulo 6 — retroatividade (Marco 2)
+
+## 11. Alcance: pelo corte selado, não pela competência
+
+**Contexto:** o playbook define as competências alcançadas por um fato ou versão como
+"efeito ≤ competência < registro". Para a promoção do Victor (registro em 10/07), a
+competência 07/2026 fica ambígua: a folha de julho fechou com corte 01/08 e **já pagou** o B8.
+
+**Decisão:** `folhasAlcancadas(folhas, novidade)` devolve as folhas fechadas com
+(i) `dataEfeito ≤ último dia da competência` e (ii) `corte selado < dataRegistro`. Um corte
+igual ao registro já sabia (a linha do tempo inclui `registro ≤ corte`). `Novidade` é só
+`{dataEfeito, dataRegistro}`, então serve igualmente para um `Fato` e para uma `VersaoRegra`
+(Fundação §5.3: não há diferença estrutural entre regra que mudou e fato atrasado).
+
+**Por quê:** o corte é o que a folha de fato enxergou. A regra do playbook é a aproximação
+dele quando o corte cai no mês seguinte à competência, que é o caso comum.
+
+**Limitação:** o alcance é da instituição, não da história. Uma folha alcançada que não
+inclui a história do fato só produz diferença zero na apuração.
+
+---
+
+## 12. Uma única folha fechada por competência e tipo
+
+**Contexto:** `apurar(competencia, tipoFolha)` precisa localizar "a" folha fechada, e
+`FolhaRepositorio` não tem busca por competência.
+
+**Decisão:** `listarFolhasFechadas` faz `SELECT id FROM folha WHERE estado = 'fechada'` e
+relê cada folha por `buscarPorId` (reaproveitando o mapeamento da `persistencia`, sem mudar
+o pacote). A apuração recusa com `ErroServicoFolha` quando não há exatamente uma.
+
+**Por quê:** no MVP não há suplementar nem refazimento da mesma folha. Quando houver,
+"qual folha foi paga" deixa de ser única e a pergunta muda (consolidação, Módulo 12).
+Uma listagem N+1 é aceitável para dezenas de folhas. Se pesar, ela vai para a
+`persistencia` como `listarFechadas`.
+
+---
+
+## 13. O "agora" é parâmetro: `apurar(competencia, tipoFolha, corteNovo)`
+
+**Contexto:** o playbook escreve `apurar(competencia, tipoFolha)`, com "corte agora". A Regra
+Global #2 proíbe relógio fora da `api`.
+
+**Decisão:** o terceiro parâmetro `corteNovo` é o "agora", vindo do chamador (o script usa
+uma constante, a `api` usará o relógio). Ele passa pela `canonizarInstante` (#7).
+
+---
+
+## 14. `ServicoFolha.recalcularComCorte`: a segunda leitura do tempo
+
+**Contexto:** "como deveria ser" é a mesma `calcularFolha` com outro corte, mas o cálculo
+mora fechado dentro do serviço (`calcular`, que carrega histórias e o leitor de janelas).
+
+**Decisão:** o serviço ganhou `recalcularComCorte(folhaId, corte)`. Ele exige folha fechada,
+reaproveita o mesmo `calcular` de `fechar`/`reproduzir` e não persiste nada. Não aplica o
+selo `folhasConsumidas`: a janela lê as folhas fechadas até o corte novo, porque "como
+deveria ser" é o que se sabe hoje.
+
+**Por quê:** é a única forma de a apuração usar o caminho de cálculo **idêntico** ao do
+fechamento. Duplicar a montagem de `calcularFolha` no apurador abriria espaço para as duas
+leituras divergirem por motivo que não fosse o tempo.
+
+---
+
+## 15. O que é diferença, e quando a apuração recusa
+
+- **"Como foi pago" = o persistido**, e o recálculo com o corte selado (`reproduzir`) tem de
+  bater com ele na serialização canônica (#6), com ids reais. Senão, ou se o recálculo der
+  erro, a apuração lança `ErroReprodutibilidadeViolada`: sem base confiável não há o que
+  subtrair. A subtração usa o **persistido**, que é o que foi efetivamente pago.
+- **Diferença = devido − pago**, por (história, rubrica). Rubrica ausente de um lado vale
+  zero desse lado. A `explicacaoNova` fica ausente quando a rubrica deixou de ser devida.
+- **Só diferenças não nulas** são devolvidas, comparando **valor**, não explicação. A V2 da
+  `salario_base` em mês sem troca de cargo explica diferente e paga igual: zero diferença.
+- **Erro no recálculo com o corte novo ⇒ `ErroApuracaoComErros`**, sem resultado parcial.
+  Mesma postura do fechamento (#8): um retroativo com rubrica faltando seria pagar errado.
+- O sinal segue a rubrica: em desconto (previdência), diferença positiva é desconto a mais.
+  Lançar isso numa folha (suplementar, mensal seguinte) é pós-MVP.
+
+---
+
+## 16. Nenhuma lógica de cálculo nova; o furo apareceu antes, nas regras
+
+**Contexto:** o playbook manda parar e registrar se o Módulo 6 precisar de lógica de cálculo
+nova, porque seria sinal de furo no desenho.
+
+**Achado:** o furo apareceu ao desenhar o módulo, e **não** estava no motor nem na
+bitemporalidade. Estava na regra: a `salario_base` V1 pagava o cargo do último dia do mês, e
+fevereiro não sairia "proporcional aos períodos". A correção foi feita nas regras, como
+dado versionado (`regras-alrn` DECISOES #14: `periodos_cargo` + `salario_base` V2), com o
+portão humano.
+
+**Resultado:** `apurar-diferencas.ts` tem duas chamadas ao serviço e uma subtração (~120
+linhas). `alcance-retroativo.ts` é um filtro sobre dois eixos do tempo. O teste de fogo
+passou sem mudar `dominio`, `motor` nem `persistencia`.
+
+**Consequência a notar:** a diferença de fevereiro **depende do corte novo**. Com um corte
+anterior a 22/10/2026 (antes da V2), "como deveria ser" ainda usa a V1 e fevereiro dá
+1.200,00 em vez de 640,00. As duas novidades (o fato atrasado e a regra corrigida) chegam
+pela mesma subtração.
+
+---
+
+## 17. Cenário e teste de adulteração
+
+- **Cenário** (`src/testes/cenario-retroativo.ts`, usado pelo teste e pelo demo): fecha
+  01–06/2026 com corte no dia 1º do mês seguinte, **depois** registra a promoção (efeito
+  15/02, registro 10/07), depois fecha 07/2026. Para isso, `semearVictor` foi dividida em
+  `semearFatos`. Uma segunda história faz a "promoção para o mesmo cargo" (B6 → B6,
+  amparo `processo 124/2026`, um número inventado), nas mesmas folhas.
+- **Adulteração:** `minimus_app` não pode alterar `registro_calculo`, e o trigger append-only
+  barra até o dono da tabela. O teste usa o superusuário do container com
+  `session_replication_role = replica` (que desliga os triggers na sessão) para somar
+  R$ 0,01 ao `salario_base` de junho. Isso simula quem mexe no banco por fora do sistema. A
+  conexão de superusuário só existe em `src/testes/` (`conexaoSuperusuario`).
+- **Valores esperados** vêm das tabelas **inventadas** (`regras-alrn` #6 e #8): B8 − B6 =
+  1.200,00; fevereiro = 16/30 × 1.200,00 = 640,00; previdência = 14% da diferença, porque a
+  base já está na faixa marginal (89,60 e 168,00). Quando as tabelas reais chegarem, os
+  números mudam e a proporção continua.

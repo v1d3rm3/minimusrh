@@ -77,6 +77,12 @@ export interface ServicoFolha {
   fechar(folhaId: FolhaId, autor: Autor, instante: DataRegistro): Promise<ResultadoFechamento>;
   /** Recalcula do zero uma folha FECHADA com o mesmo corte e o mesmo selo — não persiste nada. */
   reproduzir(folhaId: FolhaId): Promise<ResultadoCalculo>;
+  /**
+   * Recalcula uma folha FECHADA com OUTRO corte ("como deveria ser", Fundação §5.3) — mesma
+   * `calcularFolha`, sem selo e sem persistir nada. É a segunda leitura do tempo da apuração
+   * de diferenças (Módulo 6).
+   */
+  recalcularComCorte(folhaId: FolhaId, corte: DataRegistro): Promise<ResultadoCalculo>;
 }
 
 export interface DependenciasServicoFolha {
@@ -203,6 +209,13 @@ export function criarServicoFolha(deps: DependenciasServicoFolha): ServicoFolha 
       const folha = await carregarFolha(folhaId);
       exigirEstado(folha, "fechada", "reproduzir");
       const { resultado } = await calcular(folha, folha.corte!, folha.folhasConsumidas ?? []);
+      return resultado;
+    },
+
+    async recalcularComCorte(folhaId: FolhaId, corte: DataRegistro): Promise<ResultadoCalculo> {
+      const folha = await carregarFolha(folhaId);
+      exigirEstado(folha, "fechada", "recalcularComCorte");
+      const { resultado } = await calcular(folha, canonizarInstante(corte));
       return resultado;
     },
   };

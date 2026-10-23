@@ -53,6 +53,11 @@ export function renderizarExtrato(registro: RegistroCalculo, opcoes: OpcoesExtra
   ].join("\n");
 }
 
+/** Só a árvore de uma explicação (ex.: a `explicacaoNova` de uma diferença retroativa). */
+export function renderizarExplicacao(no: NoExplicacao, opcoes: OpcoesExtrato = {}, nivel = 0): string {
+  return linhasDoNo(no, nivel, opcoes).join("\n");
+}
+
 /** Todos os FatoIds citados (em qualquer profundidade), sem repetição, na ordem da árvore. */
 export function fatosCitados(registros: readonly RegistroCalculo[]): readonly FatoId[] {
   const ids = new Set<FatoId>();

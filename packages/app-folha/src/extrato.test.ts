@@ -3,7 +3,7 @@ import type { Fato, FatoId, FolhaId, HistoriaId, RegistroCalculo, RegraChave, Ru
 import { RUBRICA_CONTRIBUICAO_PREVIDENCIA, RUBRICA_SALARIO_BASE, criarCatalogoRubricas } from "@minimusrh/regras-alrn";
 import type { CatalogoRubricas } from "@minimusrh/dominio";
 import { describe, expect, it } from "vitest";
-import { fatosCitados, renderizarContracheque, renderizarExtrato } from "./extrato.js";
+import { fatosCitados, renderizarContracheque, renderizarExplicacao, renderizarExtrato } from "./extrato.js";
 
 const H = "h1" as HistoriaId;
 
@@ -84,6 +84,14 @@ describe("renderizarExtrato", () => {
       }),
     );
     expect(texto.split("\n")).toEqual(["contribuicao_previdencia (rubrica v1) = 665.50", "  x", "    rubrica salario_base = 6200.00", "    fato fato-posse"]);
+  });
+});
+
+describe("renderizarExplicacao", () => {
+  it("só a árvore, sem cabeçalho de registro, a partir do nível pedido", () => {
+    const no = { descricao: "raiz", valor: "1.00", fontes: [{ tipo: "derivacao" as const, chave: "cargo" as never, valor: "B8" }] };
+    expect(renderizarExplicacao(no)).toBe("raiz = 1.00\n  derivação cargo = B8");
+    expect(renderizarExplicacao(no, {}, 2)).toBe("    raiz = 1.00\n      derivação cargo = B8");
   });
 });
 

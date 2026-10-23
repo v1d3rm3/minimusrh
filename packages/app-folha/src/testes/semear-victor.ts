@@ -23,11 +23,20 @@ export interface VictorSemeado {
 }
 
 export async function semearVictor(pool: Pool, fatosExtras: readonly Fato[] = []): Promise<VictorSemeado> {
+  return semearFatos(pool, [...VICTOR_FATOS, ...fatosExtras]);
+}
+
+/**
+ * Grava fatos da fixture (ids legíveis da história do Victor viram o UUID fixo). Separada de
+ * `semearVictor` para o cenário retroativo (Módulo 6), que registra a promoção DEPOIS de
+ * fechar fevereiro–junho, como aconteceria na vida real.
+ */
+export async function semearFatos(pool: Pool, fatosDaFixture: readonly Fato[]): Promise<VictorSemeado> {
   const repositorio = fatoRepositorioPg(pool, criarCatalogoTiposDeFato());
   const fatos = new Map<FatoId, Fato>();
   const apelidos = new Map<string, string>();
 
-  for (const original of [...VICTOR_FATOS, ...fatosExtras]) {
+  for (const original of fatosDaFixture) {
     const { id: _idDaFixture, ...semId } = original;
     const novo = {
       ...semId,

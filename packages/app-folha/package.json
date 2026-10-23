@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "demo:victor": "node dist/demo/victor.js"
+    "demo:victor": "node dist/demo/victor.js",
+    "demo:retroativo": "node dist/demo/retroativo.js"
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^12.0.4",
