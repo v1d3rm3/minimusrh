@@ -18,16 +18,19 @@ function maisRecente(a: Fato<ConteudoCargo> | undefined, b: Fato<ConteudoCargo> 
   return b.dataEfeito > a.dataEfeito ? b : a;
 }
 
+/** Cargo vigente num dia — reaproveitado por `periodos_cargo` para fatiar a competência. */
+export function cargoEm(linha: LinhaDoTempo, em: DataEfeito): string | undefined {
+  const posse = linha.vigenteEm<ConteudoCargo>(TIPO_FATO_POSSE, em);
+  const promocao = linha.vigenteEm<ConteudoCargo>(TIPO_FATO_PROMOCAO, em);
+  return maisRecente(posse, promocao)?.conteudo.cargo;
+}
+
 const V1: VersaoDerivacao<string> = {
   versao: 1,
   dataEfeito: dataEfeito("2026-01-01"),
   dataRegistro: dataRegistro("2026-01-01T00:00:00Z"),
   dependeDe: [TIPO_FATO_POSSE, TIPO_FATO_PROMOCAO],
-  derivar(linha: LinhaDoTempo, referencia: DataEfeito): string | undefined {
-    const posse = linha.vigenteEm<ConteudoCargo>(TIPO_FATO_POSSE, referencia);
-    const promocao = linha.vigenteEm<ConteudoCargo>(TIPO_FATO_PROMOCAO, referencia);
-    return maisRecente(posse, promocao)?.conteudo.cargo;
-  },
+  derivar: cargoEm,
 };
 
 export const DERIVACAO_CARGO_IMPL: Derivacao<string> = { chave: DERIVACAO_CARGO, versoes: [V1] };

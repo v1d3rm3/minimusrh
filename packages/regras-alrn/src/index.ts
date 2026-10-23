@@ -36,6 +36,12 @@ export { DERIVACAO_CARGO, DERIVACAO_CARGO_IMPL } from "./derivacao-cargo.js";
 export { DERIVACAO_DIAS_TRABALHADOS, DERIVACAO_DIAS_TRABALHADOS_IMPL, type DiasTrabalhados } from "./derivacao-dias-trabalhados.js";
 export { DERIVACAO_IDADE, DERIVACAO_IDADE_IMPL } from "./derivacao-idade.js";
 export {
+  DERIVACAO_PERIODOS_CARGO,
+  DERIVACAO_PERIODOS_CARGO_IMPL,
+  type PeriodoCargo,
+  type PeriodosCargo,
+} from "./derivacao-periodos-cargo.js";
+export {
   DERIVACAO_SITUACAO_FUNCIONAL,
   DERIVACAO_SITUACAO_FUNCIONAL_IMPL,
   type SituacaoFuncional,
@@ -45,7 +51,7 @@ export { CATALOGO_CHAVES_DERIVACAO, criarRegistroDeDerivacoes } from "./registro
 // Regras
 export { REGRA_AUXILIO_SAUDE, REGRA_AUXILIO_SAUDE_V1 } from "./regra-auxilio-saude.js";
 export { REGRA_CONTRIBUICAO_PREVIDENCIA, REGRA_CONTRIBUICAO_PREVIDENCIA_V1 } from "./regra-contribuicao-previdencia.js";
-export { REGRA_SALARIO_BASE, REGRA_SALARIO_BASE_V1 } from "./regra-salario-base.js";
+export { REGRA_SALARIO_BASE, REGRA_SALARIO_BASE_V1, REGRA_SALARIO_BASE_V2 } from "./regra-salario-base.js";
 
 // Suporte genérico de LinhaDoTempo em memória (reutilizável por qualquer fixture, não só Victor)
 export { linhaDoTempoEmMemoria } from "./linha-do-tempo-em-memoria.js";
@@ -63,8 +69,8 @@ export {
 
 import { REGRA_AUXILIO_SAUDE_V1 } from "./regra-auxilio-saude.js";
 import { REGRA_CONTRIBUICAO_PREVIDENCIA_V1 } from "./regra-contribuicao-previdencia.js";
-import { REGRA_SALARIO_BASE_V1 } from "./regra-salario-base.js";
+import { REGRA_SALARIO_BASE_V1, REGRA_SALARIO_BASE_V2 } from "./regra-salario-base.js";
 
 // Array plano pronto para packages/motor::resolverParaExecucao (o dominio não define um
 // container "Regra{chave,versoes}" — motor já consome VersaoRegra[] diretamente).
-export const CATALOGO_REGRAS: readonly VersaoRegra[] = [REGRA_SALARIO_BASE_V1, REGRA_AUXILIO_SAUDE_V1, REGRA_CONTRIBUICAO_PREVIDENCIA_V1];
+export const CATALOGO_REGRAS: readonly VersaoRegra[] = [REGRA_SALARIO_BASE_V1, REGRA_SALARIO_BASE_V2, REGRA_AUXILIO_SAUDE_V1, REGRA_CONTRIBUICAO_PREVIDENCIA_V1];

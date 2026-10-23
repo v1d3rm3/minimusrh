@@ -2,6 +2,7 @@ import type { Derivacao, DerivacaoChave, RegistroDeDerivacoes } from "@minimusrh
 import { DERIVACAO_CARGO, DERIVACAO_CARGO_IMPL } from "./derivacao-cargo.js";
 import { DERIVACAO_DIAS_TRABALHADOS, DERIVACAO_DIAS_TRABALHADOS_IMPL } from "./derivacao-dias-trabalhados.js";
 import { DERIVACAO_IDADE, DERIVACAO_IDADE_IMPL } from "./derivacao-idade.js";
+import { DERIVACAO_PERIODOS_CARGO, DERIVACAO_PERIODOS_CARGO_IMPL } from "./derivacao-periodos-cargo.js";
 import { DERIVACAO_SITUACAO_FUNCIONAL, DERIVACAO_SITUACAO_FUNCIONAL_IMPL } from "./derivacao-situacao-funcional.js";
 
 // registro-derivacoes.ts — Design Domínio §4: "verificação de integridade na
@@ -15,6 +16,7 @@ const MAPA: Readonly<Record<DerivacaoChave, Derivacao<unknown>>> = {
   [DERIVACAO_CARGO]: DERIVACAO_CARGO_IMPL,
   [DERIVACAO_SITUACAO_FUNCIONAL]: DERIVACAO_SITUACAO_FUNCIONAL_IMPL,
   [DERIVACAO_DIAS_TRABALHADOS]: DERIVACAO_DIAS_TRABALHADOS_IMPL,
+  [DERIVACAO_PERIODOS_CARGO]: DERIVACAO_PERIODOS_CARGO_IMPL,
 };
 
 export const CATALOGO_CHAVES_DERIVACAO: readonly DerivacaoChave[] = Object.keys(MAPA) as DerivacaoChave[];

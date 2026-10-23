@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DERIVACAO_CARGO } from "./derivacao-cargo.js";
 import { DERIVACAO_DIAS_TRABALHADOS } from "./derivacao-dias-trabalhados.js";
 import { DERIVACAO_IDADE } from "./derivacao-idade.js";
+import { DERIVACAO_PERIODOS_CARGO } from "./derivacao-periodos-cargo.js";
 import { DERIVACAO_SITUACAO_FUNCIONAL } from "./derivacao-situacao-funcional.js";
 import { CATALOGO_CHAVES_DERIVACAO, criarRegistroDeDerivacoes } from "./registro-derivacoes.js";
 
@@ -11,10 +12,11 @@ const CHAVES_ESPERADAS: readonly DerivacaoChave[] = [
   DERIVACAO_CARGO,
   DERIVACAO_SITUACAO_FUNCIONAL,
   DERIVACAO_DIAS_TRABALHADOS,
+  DERIVACAO_PERIODOS_CARGO,
 ];
 
 describe("registro de derivações: integridade catálogo ⇄ implementação", () => {
-  it("o catálogo de chaves tem exatamente as 4 derivações do Módulo 4, sem duplicatas", () => {
+  it("o catálogo de chaves tem exatamente as derivações esperadas (4 do Módulo 4 + periodos_cargo), sem duplicatas", () => {
     expect(new Set(CATALOGO_CHAVES_DERIVACAO)).toEqual(new Set(CHAVES_ESPERADAS));
     expect(CATALOGO_CHAVES_DERIVACAO.length).toBe(CHAVES_ESPERADAS.length);
   });

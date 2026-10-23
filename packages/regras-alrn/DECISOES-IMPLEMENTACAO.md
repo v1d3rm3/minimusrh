@@ -214,3 +214,57 @@ dependência única de `dominio` que o Rush já garante estruturalmente.
 critério de aceite do Módulo 4 pede explicitamente "dependência única de dominio comprovada
 pelo build" — o teste de arquitetura é a segunda camada de garantia, mais legível que o
 grafo de dependências do Rush para quem revisa o PR.
+
+---
+
+## 14. `periodos_cargo` + `salario_base` V2: promoção no meio do mês
+
+**Contexto:** descoberto ao desenhar o Módulo 6 (retroatividade). O motor resolve as
+derivações em `Competencia.dataReferencia()`, que é o **último dia** da competência. A
+derivação `cargo` lê o fato vigente nesse dia, então a V1 da `salario_base` paga o cargo
+novo no mês inteiro. Para o Victor (promoção B6→B8 com efeito em 15/02/2026), fevereiro
+sairia 6.200,00, quando o playbook do Módulo 6 pede diferenças "proporcionais aos
+períodos". Corrigir isso no `apurar-diferencas` seria lógica de cálculo nova fora das
+regras, o que o playbook proíbe. Por isso a correção mora aqui (decisão humana: opção (b)).
+
+**Opções:** (a) aceitar fevereiro cheio e registrar só a pendência; (b) uma derivação que
+fatia a competência por cargo e uma nova versão da regra; (c) alterar a V1 no lugar.
+
+**Decisão:** (b).
+- **Derivação `periodos_cargo`** → `{ periodos: [{ cargo, dias }], diasNoMes: 30 }`, em
+  ordem cronológica, com cargos consecutivos iguais agrupados. Ela usa o **mesmo mês
+  comercial de 30 dias e o mesmo intervalo trabalhado** de `dias_trabalhados` (#3: o dia da
+  entrada não conta, o da saída conta). Cada dia comercial pergunta o cargo vigente via
+  `cargoEm` (extraído de `derivacao-cargo.ts`, sem mudar o comportamento da `cargo`).
+- **A mudança de cargo vale a partir do próprio dia do efeito** (`dataEfeito` é inclusiva,
+  como em toda vigência do dominio). Victor em 02/2026: 14 dias B6 + 16 dias B8.
+- **Mapeamento dia comercial → dia real:** os dias 1–29 são o próprio dia, limitado ao
+  último dia real (em fevereiro, 29 e 30 repetem o dia 28/29), e o dia 30 é o **último dia
+  real** do mês. Assim, uma promoção no dia 31 vale 1 dia no mês, e não fica para o seguinte.
+- **`salario_base` V2** soma `proporcional(valor do cargo, dias, 30)` por período, com o
+  atalho de mês cheio para o valor integral. Ela declara só `periodos_cargo` no consumo.
+  Sem troca de cargo, dá **o mesmo valor da V1** (entrada/saída no meio do mês incluídas).
+  Victor em 02/2026: 14/30 × 5.000 + 16/30 × 6.200 = **5.640,00**.
+- **Vigência da V2:** mesmo `dataEfeito` da V1 (2026-01-01, corrige desde sempre) e
+  `dataRegistro` **2026-10-22T00:00:00Z** (data em que a correção foi publicada). Pelo
+  desempate do `versaoVigente` (mesmo efeito ⇒ maior registro), um corte anterior a
+  22/10 resolve a V1 e um corte posterior resolve a V2.
+
+**Por quê:** (c) reescreveria o passado: folhas fechadas com a V1 deixariam de se
+reproduzir, e isso quebra a assertion "reprodutibilidade violada" do Módulo 6. Com a V2
+publicada depois, a folha fechada continua reproduzindo a V1, e a correção aparece como
+**retroativo** na apuração (Fundação §5.3: "nenhuma diferença estrutural entre regra que
+mudou e fato que chegou atrasado").
+
+**Efeitos:**
+- O golden (corte 01/08/2026) e os testes de integração do `app-folha` (cortes até
+  02/09/2026) continuam resolvendo a **V1**, então seus valores não mudam.
+- A fiscalização com contexto instrumentado (`app-folha`) ganhou um corte posterior à V2
+  para cobrir também a nova versão.
+- `dias_trabalhados` e a V1 continuam no catálogo, porque são o histórico. A V1 tem um
+  defeito latente que **não** foi corrigido: com saída no dia 31, ela conta 31/30.
+
+**A confirmar com o humano:**
+1. A convenção "dia do efeito já no cargo novo" (alternativa: o dia do efeito no cargo
+   antigo, por simetria com a posse em #3, o que daria 15 + 15 no Victor).
+2. A data de publicação da V2. Sem relógio no core, ela é uma constante escolhida.

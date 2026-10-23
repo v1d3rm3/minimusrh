@@ -4,6 +4,7 @@ import { RUBRICA_SALARIO_BASE } from "./catalogo-rubricas.js";
 import { TIPO_FOLHA_MENSAL } from "./catalogo-tipos-folha.js";
 import { DERIVACAO_CARGO } from "./derivacao-cargo.js";
 import { DERIVACAO_DIAS_TRABALHADOS, type DiasTrabalhados } from "./derivacao-dias-trabalhados.js";
+import { DERIVACAO_PERIODOS_CARGO, type PeriodosCargo } from "./derivacao-periodos-cargo.js";
 
 // regra-salario-base.ts — Fundação §3.6: salario_base "sofre o fator de dias trabalhados".
 // DECISOES #2: a proporcionalidade é aplicada AQUI, dentro da regra — não no motor (Módulo
@@ -30,6 +31,14 @@ function proporcional(valorIntegral: Dinheiro, dias: number, diasNoMes: number):
   return total;
 }
 
+function valorDoCargo(cargo: string | undefined): Dinheiro {
+  const valorIntegral = cargo === undefined ? undefined : TABELA_SALARIO_POR_CARGO_V1.get(cargo);
+  if (valorIntegral === undefined) {
+    throw new Error(`salario_base: cargo '${cargo}' nao consta na tabela salarial vigente`);
+  }
+  return valorIntegral;
+}
+
 const CONSOME: DeclaracaoConsumo = {
   derivacoes: [DERIVACAO_CARGO, DERIVACAO_DIAS_TRABALHADOS],
   rubricas: [],
@@ -53,11 +62,7 @@ const V1: VersaoRegra = {
   },
 
   calcular(ctx: Contexto): Dinheiro {
-    const cargo = ctx.derivacao<string>(DERIVACAO_CARGO);
-    const valorIntegral = cargo === undefined ? undefined : TABELA_SALARIO_POR_CARGO_V1.get(cargo);
-    if (valorIntegral === undefined) {
-      throw new Error(`salario_base: cargo '${cargo}' nao consta na tabela salarial vigente`);
-    }
+    const valorIntegral = valorDoCargo(ctx.derivacao<string>(DERIVACAO_CARGO));
 
     const diasInfo = ctx.derivacao<DiasTrabalhados>(DERIVACAO_DIAS_TRABALHADOS);
     if (diasInfo === undefined || diasInfo.dias === diasInfo.diasNoMes) {
@@ -68,3 +73,42 @@ const V1: VersaoRegra = {
 };
 
 export const REGRA_SALARIO_BASE_V1 = V1;
+
+// V2 (DECISOES #14): a V1 pega o cargo do último dia da competência, então uma promoção no
+// meio do mês paga o cargo novo no mês inteiro. A V2 soma, período a período, a fração de
+// cada cargo vigente nos dias trabalhados. Mesma vigência de efeito da V1 (corrige o
+// cálculo desde sempre), publicada depois: folhas fechadas com corte anterior continuam
+// reproduzindo a V1 — e a diferença entre as duas vira retroativo (Fundação §5.3).
+const CONSOME_V2: DeclaracaoConsumo = {
+  derivacoes: [DERIVACAO_PERIODOS_CARGO],
+  rubricas: [],
+  classificacoes: [],
+  tiposFato: [],
+  janelas: [],
+};
+
+const V2: VersaoRegra = {
+  ...V1,
+  versao: 2,
+  dataRegistro: dataRegistro("2026-10-22T00:00:00Z"),
+  consome: CONSOME_V2,
+
+  quando(ctx: Contexto): boolean {
+    return ctx.derivacao<PeriodosCargo>(DERIVACAO_PERIODOS_CARGO) !== undefined;
+  },
+
+  calcular(ctx: Contexto): Dinheiro {
+    const info = ctx.derivacao<PeriodosCargo>(DERIVACAO_PERIODOS_CARGO);
+    if (info === undefined) {
+      throw new Error("salario_base: periodos_cargo nao derivavel nesta competencia");
+    }
+    let total = Dinheiro.zero();
+    for (const { cargo, dias } of info.periodos) {
+      const valorIntegral = valorDoCargo(cargo);
+      total = total.somar(dias === info.diasNoMes ? valorIntegral : proporcional(valorIntegral, dias, info.diasNoMes));
+    }
+    return total;
+  },
+};
+
+export const REGRA_SALARIO_BASE_V2 = V2;

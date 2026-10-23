@@ -23,6 +23,8 @@ import { agruparRegras } from "./configuracao.js";
 
 const JULHO = Competencia.de(2026, 7);
 const CORTE = dataRegistro("2026-08-01T00:00:00.000Z");
+// Depois da publicação da salario_base V2 (regras-alrn DECISOES #14): fiscaliza a V2 também.
+const CORTE_POS_V2 = dataRegistro("2026-10-22T00:00:00.000Z");
 
 const COMPROVACAO: Fato = {
   id: "fato-vitor-plano" as FatoId,
@@ -46,16 +48,16 @@ const LEITOR_SEM_JANELAS: LeitorDeJanelas = {
 };
 
 /** Roda as regras resolvidas na ordem do catálogo (já topológica) e devolve, por regra, aplicou? + violações. */
-function fiscalizar(linha: LinhaDoTempo) {
+function fiscalizar(linha: LinhaDoTempo, corte = CORTE) {
   const rubricas = criarCatalogoRubricas();
-  const { regrasResolvidas, rubricasResolvidas } = resolverParaExecucao(agruparRegras(CATALOGO_REGRAS), rubricas, JULHO, TIPO_FOLHA_MENSAL, CORTE);
+  const { regrasResolvidas, rubricasResolvidas } = resolverParaExecucao(agruparRegras(CATALOGO_REGRAS), rubricas, JULHO, TIPO_FOLHA_MENSAL, corte);
   const rubricasCalculadas = new Map<RubricaChave, Dinheiro>();
   const base = criarContexto({
     linha,
     competencia: JULHO,
     tipoFolha: TIPO_FOLHA_MENSAL,
     dataReferencia: JULHO.dataReferencia(),
-    corte: CORTE,
+    corte,
     registroDeDerivacoes: criarRegistroDeDerivacoes(),
     rubricasResolvidas,
     rubricasCalculadas,
@@ -66,14 +68,22 @@ function fiscalizar(linha: LinhaDoTempo) {
     const instrumentado = instrumentar(base);
     const aplicou = regra.quando(instrumentado.ctx);
     if (aplicou) rubricasCalculadas.set(regra.produz, regra.calcular(instrumentado.ctx));
-    return { regra: regra.regra, aplicou, violacoes: instrumentado.violacoes(regra.consome) };
+    return { regra: regra.regra, versao: regra.versao, aplicou, violacoes: instrumentado.violacoes(regra.consome) };
   });
 }
 
 describe("fiscalização das regras da ALRN contra a DeclaracaoConsumo (contexto instrumentado do motor)", () => {
-  it("as três regras resolvem em 07/2026 — a fiscalização cobre o catálogo inteiro", () => {
-    const linha = linhaDoTempoEmMemoria(criarCatalogoTiposDeFato(), VICTOR_HISTORIA_ID, VICTOR_FATOS, CORTE);
-    expect(fiscalizar(linha).map((f) => f.regra)).toEqual(CATALOGO_REGRAS.map((r) => r.regra));
+  it("os dois cortes juntos resolvem todas as versões do catálogo — a fiscalização cobre o catálogo inteiro", () => {
+    const linha = (corte: typeof CORTE) => linhaDoTempoEmMemoria(criarCatalogoTiposDeFato(), VICTOR_HISTORIA_ID, VICTOR_FATOS, corte);
+    const fiscalizadas = [...fiscalizar(linha(CORTE)), ...fiscalizar(linha(CORTE_POS_V2), CORTE_POS_V2)].map((f) => `${f.regra}@${f.versao}`);
+    expect(new Set(fiscalizadas)).toEqual(new Set(CATALOGO_REGRAS.map((r) => `${r.regra}@${r.versao}`)));
+  });
+
+  it("com corte posterior à V2, a salario_base V2 aplica e não lê além do declarado", () => {
+    const linha = linhaDoTempoEmMemoria(criarCatalogoTiposDeFato(), VICTOR_HISTORIA_ID, [...VICTOR_FATOS, COMPROVACAO], CORTE_POS_V2);
+    const resultado = fiscalizar(linha, CORTE_POS_V2);
+    expect(resultado.find((f) => f.regra === "salario_base")).toMatchObject({ versao: 2, aplicou: true });
+    expect(resultado.filter((f) => f.violacoes.length > 0)).toEqual([]);
   });
 
   it("Victor com plano de saúde: todas as regras aplicam e nenhuma lê além do declarado", () => {
