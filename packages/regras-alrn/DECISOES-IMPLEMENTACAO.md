@@ -264,7 +264,8 @@ mudou e fato que chegou atrasado").
 - `dias_trabalhados` e a V1 continuam no catálogo, porque são o histórico. A V1 tem um
   defeito latente que **não** foi corrigido: com saída no dia 31, ela conta 31/30.
 
-**A confirmar com o humano:**
-1. A convenção "dia do efeito já no cargo novo" (alternativa: o dia do efeito no cargo
-   antigo, por simetria com a posse em #3, o que daria 15 + 15 no Victor).
-2. A data de publicação da V2. Sem relógio no core, ela é uma constante escolhida.
+**Confirmado com o humano (2026-10-23):**
+1. O dia do efeito **já conta no cargo novo** (Victor em 02/2026: 14 dias B6 + 16 dias B8).
+   A alternativa (dia do efeito no cargo antigo, 15 + 15) foi descartada.
+2. A data de publicação da V2 fica em 2026-10-22T00:00:00Z. Os dados atuais são de teste,
+   então a constante pode ser revista depois.
