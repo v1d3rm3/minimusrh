@@ -16,7 +16,7 @@ Módulos concluídos (todos em `packages/` e registrados em `rush.json`):
 | 4 | `@minimusrh/regras-alrn` | dominio (somente) |
 | 5 | `@minimusrh/app-folha` | dominio, motor, persistencia, regras-alrn, `pg` |
 
-O **Módulo 6, retroatividade (Marco 2, o "teste de fogo")**, está implementado no `app-folha` (`apurar-diferencas.ts`, `alcance-retroativo.ts`, `rushx demo:retroativo`) e aguarda o **portão humano obrigatório**: validar o demo à mão, revisar as decisões #11–#17 do `DECISOES-IMPLEMENTACAO.md` do `app-folha` e, se passar limpo, registrar a data no README do repositório. Só então vem o Módulo 7 (`importador-legado`). Consulte o playbook para saber o escopo e o portão humano de cada módulo.
+O **Módulo 6, retroatividade (Marco 2, o "teste de fogo")**, está implementado no `app-folha` (`apurar-diferencas.ts`, `alcance-retroativo.ts`, `rushx demo:retroativo`) e passou no portão humano em 24/10/2026 (data registrada no README). O próximo é o Módulo 7 (`importador-legado`). Consulte o playbook para saber o escopo e o portão humano de cada módulo.
 
 O **golden test de reprodutibilidade** (`packages/app-folha/src/golden-reprodutibilidade.integracao.test.ts`, arquivo de referência em `packages/app-folha/golden/`) é o teste mais importante do repositório. Nunca o desligue nem o regrave só "para passar". A regravação consciente é feita com `ATUALIZAR_GOLDEN=1 rushx test`. `apps/` continua vazio; a `api` (NestJS) só entra no Módulo 11.
 
