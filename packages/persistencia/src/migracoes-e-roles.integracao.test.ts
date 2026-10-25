@@ -86,6 +86,30 @@ describe("append-only, roles e idempotencia de migracao (integracao)", () => {
     ).rejects.toThrow(/append-only/i);
   });
 
+  it.each(["servidor_legado", "vinculo_legado", "fato_importado", "gabarito_legado"])(
+    "minimus_app nao tem UPDATE/DELETE na tabela de importacao %s (permission denied)",
+    async (tabela) => {
+      await expect(ambiente.poolApp.query(`UPDATE ${tabela} SET lote = 'x'`)).rejects.toThrow(/permission denied/i);
+      await expect(ambiente.poolApp.query(`DELETE FROM ${tabela}`)).rejects.toThrow(/permission denied/i);
+    },
+  );
+
+  it("a trigger bloqueia UPDATE/DELETE nas tabelas de identidade legada mesmo para minimus_migracao", async () => {
+    await ambiente.poolApp.query(
+      `INSERT INTO servidor_legado (id_servidor_legado, pessoa_id, lote) VALUES ('s-trigger', $1, 'teste')`,
+      [randomUUID()],
+    );
+    await ambiente.poolApp.query(
+      `INSERT INTO vinculo_legado (id_vinculo_legado, historia_id, id_servidor_legado, pessoa_id, lote)
+       VALUES ('v-trigger', $1, 's-trigger', $2, 'teste')`,
+      [randomUUID(), randomUUID()],
+    );
+    for (const tabela of ["servidor_legado", "vinculo_legado"]) {
+      await expect(ambiente.poolMigracao.query(`UPDATE ${tabela} SET lote = 'x'`)).rejects.toThrow(/append-only/i);
+      await expect(ambiente.poolMigracao.query(`DELETE FROM ${tabela}`)).rejects.toThrow(/append-only/i);
+    }
+  });
+
   it("reexecutar a fase schema (idempotencia) nao lanca erro", async () => {
     await expect(ambiente.reaplicarMigracaoSchema()).resolves.toBeUndefined();
   });

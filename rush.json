@@ -356,6 +356,10 @@
       "packageName": "@minimusrh/app-folha",
       "projectFolder": "packages/app-folha"
     },
+    {
+      "packageName": "@minimusrh/importador-legado",
+      "projectFolder": "packages/importador-legado"
+    },
     // {
     //   /**
     //    * The NPM package name of the project (must match package.json)

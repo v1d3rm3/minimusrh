@@ -244,3 +244,29 @@ Exportar o mapeamento evita uma segunda conversão NUMERIC→dinheiro escrita à
 volta do banco como `…00.000Z` (o `to_char` dos mapeamentos), não necessariamente na forma
 em que foi gravado. Resolvido na porta `dataRegistro()` do dominio, que agora produz
 exatamente essa forma. O mapeamento daqui e a porta concordam por construção.
+
+---
+
+## 11. Tabelas de importação e `ExecutorSql`, acrescentados no Módulo 7
+
+**Contexto:** o `importador-legado` (Módulo 7) precisa (i) de tabelas para o mapa de
+identidade legado ⇄ MinimusRH, a idempotência por chave natural e o gabarito de contracheques,
+e (ii) de gravar um fato na **mesma transação** que essas linhas.
+
+**Decisão:**
+- Migração `1735689600008_importacao_legado`: `servidor_legado`, `vinculo_legado`,
+  `fato_importado` e `gabarito_legado`. Todas append-only, como `fato`: trigger
+  `bloquear_alteracao_append_only` e `minimus_app` só com SELECT/INSERT. O conteúdo de cada
+  uma está no DECISOES do `importador-legado` (#2, #3, #11).
+- `ExecutorSql = Pool | PoolClient` (`pool.ts`): `fatoRepositorioPg` aceita qualquer um dos dois.
+  A assinatura é compatível com a anterior, porque quem passava `Pool` continua passando.
+
+**Por quê:** as migrações têm um único dono (a mesma razão da #10). Um segundo schema migrado
+pelo importador poderia divergir, e os grants precisam de `minimus_migracao`. O SQL que lê e
+escreve essas tabelas mora no `importador-legado`, como o `LeitorDeJanelas` mora no
+`app-folha`. Aceitar o cliente da transação mantém `registrar` como **única** porta de escrita
+da linha de fatos, em vez de o importador escrever `INSERT INTO fato` por conta própria.
+
+**Achado registrado:** com o mapa `vinculo_legado`, a suposição da #8 ganha uma resposta
+**parcial**: para dados importados, o vínculo pessoa↔história agora existe em tabela. Para
+fatos registrados fora da importação, continua sem dono.

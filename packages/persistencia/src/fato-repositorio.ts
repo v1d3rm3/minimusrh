@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { CatalogoTiposDeFato, DataRegistro, ErroValidacao, Fato, FatoId, HistoriaId, PessoaId } from "@minimusrh/dominio";
-import type { Pool } from "pg";
 import { fatoParaParametrosInsercao, linhaParaFato, SELECT_FATO, type LinhaFato } from "./mapeamento-fato.js";
+import type { ExecutorSql } from "./pool.js";
 import { validarConteudo } from "./validacao-conteudo.js";
 
 // fato-repositorio.ts — única porta de escrita da linha de fatos (Design §10). `id` é
@@ -42,7 +42,7 @@ export interface FatoRepositorio {
   instantaneoAtual<C>(historiaId: HistoriaId, corte: DataRegistro): Promise<readonly Fato<C>[]>;
 }
 
-export function fatoRepositorioPg(pool: Pool, catalogo: CatalogoTiposDeFato): FatoRepositorio {
+export function fatoRepositorioPg(pool: ExecutorSql, catalogo: CatalogoTiposDeFato): FatoRepositorio {
   return {
     async registrar<C>(fato: NovoFato<C>): Promise<FatoId> {
       const validacao = validarConteudo(catalogo, fato);

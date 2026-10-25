@@ -54,6 +54,7 @@ flowchart TD
     motor["@minimusrh/motor<br/>(Grafo, Resolução Bitemporal e Cálculo)"]
     persistencia["@minimusrh/persistencia<br/>(Repositórios Postgres Append-Only)"]
     regras_alrn["@minimusrh/regras-alrn<br/>(Catálogos, Derivações e Regras da Instituição)"]
+    importador["@minimusrh/importador-legado<br/>(Importação do Legado → Fatos e Gabarito)"]
     dominio["@minimusrh/dominio<br/>(Contratos, Value Objects e Resolução de Vigência)"]
 
     app_folha --> motor
@@ -63,6 +64,9 @@ flowchart TD
     motor --> dominio
     persistencia --> dominio
     regras_alrn --> dominio
+    importador --> persistencia
+    importador --> regras_alrn
+    importador --> dominio
 ```
 
 | Pacote | Caminho | Responsabilidade |
@@ -72,12 +76,13 @@ flowchart TD
 | **`@minimusrh/persistencia`** | `packages/persistencia` | Adaptadores PostgreSQL. Implementa armazenamento *append-only* de fatos e registros de cálculo (protegido por *roles* de banco e *triggers* contra `UPDATE`/`DELETE`), consultas bitemporais com tratamento de substituição de fatos e mapeamento exato `NUMERIC` ⇄ `Dinheiro` via string. |
 | **`@minimusrh/regras-alrn`** | `packages/regras-alrn` | Configuração institucional e regras de negócio (catálogos de tipos de fato, rubricas, amparos, derivações como `cargo`/`idade`/`dias_trabalhados` e regras como `salario_base`, `auxilio_saude`, `contribuicao_previdencia`). Depende **exclusivamente** de `@minimusrh/dominio`, garantindo por construção que regras não acessem banco ou infraestrutura. |
 | **`@minimusrh/app-folha`** | `packages/app-folha` | Camada de aplicação que costura motor, persistência e regras institucionais. Orquestra o ciclo de vida da folha (abertura, simulação, travamento de corte e fechamento transacional), leitura de janelas de folhas fechadas, geração de extratos legíveis de cálculo, o *golden test* de reprodutibilidade e a apuração de diferenças retroativas (corte selado da época vs. corte novo sobre a mesma competência). |
+| **`@minimusrh/importador-legado`** | `packages/importador-legado` | CLI de importação do legado (Marco 3). Traduz o estado do legado (servidores, vínculos, eventos funcionais) em fatos bitemporais, com convenções explícitas para datas de registro desconhecidas, idempotência por chave natural e relatório de rejeições. Importa os contracheques do legado como gabarito de comparação, fora da linha de fatos. Layout em [`docs/layout-importacao.md`](./docs/layout-importacao.md). |
 
 ### Marcos validados
 - **Marco 2 — Retroatividade (teste de fogo):** validado no portão humano em **24/10/2026**. A apuração de diferenças é duas execuções da `calcularFolha` e uma subtração, sem lógica de cálculo nova e sem alterar `dominio`, `motor` nem `persistencia`. A fundação está provada em código.
 
 ### Componentes previstos nos próximos marcos do Roteiro
-- **Importador de Legado & Harness de Sombra (Marcos 3–4):** importação de dados reais e batimento automatizado de contracheques centavo a centavo contra o sistema legado.
+- **Harness de Sombra (Marcos 3–4):** batimento automatizado de contracheques centavo a centavo contra o gabarito importado do sistema legado.
 - **Compilador da DSL (`@minimusrh/dsl` — Marco 5):** linguagem declarativa em português para autoria de regras de cálculo que compila para o contrato `VersaoRegra` de `@minimusrh/dominio`.
 - **API (`apps/api` — Pós-validação):** casca HTTP em NestJS sobre os serviços de aplicação (única camada autorizada a consultar o relógio para carimbar `dataRegistro`).
 

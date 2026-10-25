@@ -1,6 +1,6 @@
 // index.ts — exports públicos do pacote `persistencia`
 
-export type { ConexaoBanco } from "./pool.js";
+export type { ConexaoBanco, ExecutorSql } from "./pool.js";
 export { criarPool, withTransacao } from "./pool.js";
 
 export { DIRETORIO_MIGRACOES, rodarMigracaoBootstrap, rodarMigracaoSchema } from "./migrar.js";

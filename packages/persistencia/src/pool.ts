@@ -3,6 +3,13 @@ import { Pool, type ClientConfig, type PoolClient } from "pg";
 /** Config de conexão por role — mesma forma aceita por `pg.Pool` e pelo runner de migração. */
 export type ConexaoBanco = Pick<ClientConfig, "host" | "port" | "database" | "user" | "password">;
 
+/**
+ * Onde uma query roda: o pool (cada query na sua própria conexão) ou o cliente de uma
+ * transação aberta por {@link withTransacao}. Permite que um chamador grave um fato junto
+ * com outras linhas, atomicamente (DECISOES #11).
+ */
+export type ExecutorSql = Pool | PoolClient;
+
 export function criarPool(conexao: ConexaoBanco): Pool {
   return new Pool(conexao);
 }

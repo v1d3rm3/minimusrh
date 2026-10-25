@@ -9,7 +9,9 @@ concretas dos contratos de leitura que `@minimusrh/dominio` apenas declara — e
 - **Migrações** (`migrations/bootstrap/` + `migrations/schema/`, via `node-pg-migrate`) —
   duas roles (`minimus_migracao`, `minimus_app`), as 4 tabelas (`fato`, `folha`,
   `registro_calculo`, `transicao_folha`), os índices do Roteiro §2.5.3, e as triggers
-  append-only + de validação de cadeia de substituição.
+  append-only + de validação de cadeia de substituição. Desde o Módulo 7, também as tabelas
+  de importação (`servidor_legado`, `vinculo_legado`, `fato_importado`, `gabarito_legado`,
+  DECISOES #11), lidas e escritas pelo `importador-legado`.
 - **`fato-repositorio.ts`** — `fatoRepositorioPg(pool, catalogo)`: `registrar` (única porta
   de escrita, valida `conteudo` antes do insert), `buscarPorId`, `carregarParaLinhaDoTempo`
   (sustenta `linha-do-tempo-pg.ts`) e `instantaneoAtual` (a query `DISTINCT ON` literal do

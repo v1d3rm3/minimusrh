@@ -15,8 +15,11 @@ Módulos concluídos (todos em `packages/` e registrados em `rush.json`):
 | 3 | `@minimusrh/persistencia` | dominio, `pg`, `node-pg-migrate` |
 | 4 | `@minimusrh/regras-alrn` | dominio (somente) |
 | 5 | `@minimusrh/app-folha` | dominio, motor, persistencia, regras-alrn, `pg` |
+| 7 | `@minimusrh/importador-legado` | dominio, persistencia, regras-alrn, `pg` |
 
-O **Módulo 6, retroatividade (Marco 2, o "teste de fogo")**, está implementado no `app-folha` (`apurar-diferencas.ts`, `alcance-retroativo.ts`, `rushx demo:retroativo`) e passou no portão humano em 24/10/2026 (data registrada no README). O próximo é o Módulo 7 (`importador-legado`). Consulte o playbook para saber o escopo e o portão humano de cada módulo.
+O **Módulo 6, retroatividade (Marco 2, o "teste de fogo")**, está implementado no `app-folha` (`apurar-diferencas.ts`, `alcance-retroativo.ts`, `rushx demo:retroativo`) e passou no portão humano em 24/10/2026 (data registrada no README).
+
+O **Módulo 7, `importador-legado` (Marco 3)**, está implementado (CLI `rushx importar`, layout em `docs/layout-importacao.md`, tabelas de importação na migração `0008` de `persistencia`) e aguarda o portão humano: revisar o `DECISOES-IMPLEMENTACAO.md` do pacote (#1–#13) e a #11 de `persistencia`. Só então vem o Módulo 8 (`harness`). Consulte o playbook para saber o escopo e o portão humano de cada módulo.
 
 O **golden test de reprodutibilidade** (`packages/app-folha/src/golden-reprodutibilidade.integracao.test.ts`, arquivo de referência em `packages/app-folha/golden/`) é o teste mais importante do repositório. Nunca o desligue nem o regrave só "para passar". A regravação consciente é feita com `ATUALIZAR_GOLDEN=1 rushx test`. `apps/` continua vazio; a `api` (NestJS) só entra no Módulo 11.
 
@@ -33,7 +36,7 @@ As regras inegociáveis (dinheiro nunca é `number`, sem relógio fora da `api`,
 - A versão do Node é fixada via `mise.toml` (24.18.0) e restringida pelo `nodeSupportedVersionRange` do `rush.json` (`>=24.11.1 <25.0.0`).
 - O gerenciador de pacotes é o PNPM, instalado e com versão fixada pelo próprio Rush (não via corepack/instalação global). Sempre gerencie pacotes através de `rush`/`rushx`, não do `pnpm` puro.
 - Cada pacote usa TypeScript (`tsc`) e Vitest, com o mesmo conjunto de scripts: `build`, `typecheck`, `test`, `test:watch` e `test:coverage`. A cobertura exige 100% nos módulos com lógica.
-- Os testes de integração de `persistencia` e `app-folha` (`*.integracao.test.ts`) sobem Postgres via **Testcontainers** e exigem Docker disponível.
+- Os testes de integração de `persistencia`, `app-folha` e `importador-legado` (`*.integracao.test.ts`) sobem Postgres via **Testcontainers** e exigem Docker disponível.
 - Subspaces do Rush estão desabilitados, o cache de build está desabilitado (`buildCacheEnabled: false`) e não há política de versão definida.
 - `rush test` é um comando bulk customizado (`common/config/rush/command-line.json`) que roda o script `test` de cada projeto. Ele não faz build antes, então rode `rush build` primeiro.
 
@@ -47,6 +50,7 @@ As regras inegociáveis (dinheiro nunca é `number`, sem relógio fora da `api`,
 - Dentro da pasta de um pacote: `rushx test`, `rushx test:coverage`, `rushx typecheck`.
 - `rushx demo:victor` (em `packages/app-folha`, exige build e Docker): fecha a folha 07/2026 do Victor e imprime o contracheque com o extrato de cálculo.
 - `rushx demo:retroativo` (em `packages/app-folha`, exige build e Docker): fecha 01–07/2026, registra a promoção retroativa do Victor e imprime a tabela de diferenças apuradas.
+- `rushx importar -- --fonte csv --dir <diretório> --lote <id>` (em `packages/importador-legado`, exige build, schema migrado e variáveis `PG*`): importa um lote do legado e imprime o relatório.
 
 ## CI
 

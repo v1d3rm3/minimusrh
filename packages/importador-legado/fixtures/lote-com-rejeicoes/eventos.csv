@@ -1,0 +1,9 @@
+id_evento;id_vinculo;tipo_fato;data_efeito;data_registro;amparo_tipo;amparo;campo.cargo
+E10;V2001;promocao;2024-06-01;;processo;45/2024;B7
+E11;V2001;promocao;2025-06-01;;;;B8
+E12;V2001;licenca_premio;2025-01-01;;;;
+E13;V2001;promocao;2025-07-01;;oficio;10/2025;B8
+E14;V2001;posse;2025-07-01;;;;B8
+E15;V2002;promocao;2025-07-01;;processo;1/2025;B8
+E10;V2001;promocao;2024-06-01;;processo;45/2024;B7
+E16;V2001;promocao;2025-08-01;;processo;;B8

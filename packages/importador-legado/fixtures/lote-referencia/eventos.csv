@@ -1,0 +1,3 @@
+id_evento;id_vinculo;tipo_fato;data_efeito;data_registro;amparo_tipo;amparo;campo.cargo;campo.operadora;campo.mensalidade;campo.periodo_fim
+E1;V1001;promocao;2026-02-15;2026-07-10T14:30:00-03:00;processo;Proc. 123/2026;B8;;;
+E2;V1001;comprovacao_plano_saude;2026-01-10;;;;;"Unimed; plano ""A""";350.00;2026-12-31
