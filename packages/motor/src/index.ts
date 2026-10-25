@@ -1,8 +1,10 @@
 // index.ts — exports públicos do pacote `motor` (Playbook Módulo 2)
 
-export { montarGrafo, ErroRubricaProduzidaPorMaisDeUmaRegra, type Grafo, type ErroCiclo } from "./grafo.js";
+export { ErroRubricaProduzidaPorMaisDeUmaRegra, montarGrafo, type ErroCiclo, type Grafo } from "./grafo.js";
 
-export { resolverParaExecucao, ErroRubricaNaoResolvida, type ResolucaoTemporal } from "./resolucao.js";
+export { ResolucaoTemporal } from './resolucao/resolucao-temporal.js';
+export { resolverParaExecucao } from "./resolucao/resolucao.js";
+export { RubricaNaoResolvidaErro } from "./resolucao/rubrica-nao-resolvida-erro.js";
 
 export {
   criarContexto,
@@ -10,24 +12,17 @@ export {
   type ObservadorDeLeituras,
   type ParametrosContexto,
   type ParcelaClassificacao,
-  type ProvenienciaDerivacao,
+  type ProvenienciaDerivacao
 } from "./contexto-impl.js";
 
 export {
-  instrumentar,
-  type Violacao,
-  type Leitura,
+  instrumentar, type ContextoInstrumentado, type Leitura,
   type LeituraDerivacao,
-  type LeituraRubrica,
-  type ContextoInstrumentado,
+  type LeituraRubrica, type Violacao
 } from "./contexto-instrumentado.js";
 
 export {
-  calcularFolha,
-  type NaoAplicavel,
-  type ErroCalculoFolha,
-  type ResultadoCalculo,
-  type EntradaCalculoFolha,
+  calcularFolha, type EntradaCalculoFolha, type ErroCalculoFolha, type NaoAplicavel, type ResultadoCalculo
 } from "./calcular-folha.js";
 
 export { transitar, type ErroTransicao } from "./ciclo-folha.js";

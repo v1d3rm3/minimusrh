@@ -22,7 +22,7 @@ import type {
 import { type LeitorDeJanelas, type ParcelaClassificacao, type ProvenienciaDerivacao, criarContexto } from "./contexto-impl.js";
 import { instrumentar, type Leitura } from "./contexto-instrumentado.js";
 import { montarGrafo, type ErroCiclo } from "./grafo.js";
-import { resolverParaExecucao } from "./resolucao.js";
+import { resolverParaExecucao } from "./resolucao/resolucao.js";
 
 // calcular-folha.ts — a função central do motor (Fundacao §5.2), PURA: nenhuma leitura de
 // relógio, nenhum I/O. Toda referência temporal chega em `entrada` (Regra Global #2 do

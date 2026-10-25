@@ -1,4 +1,3 @@
-import { versaoVigente } from "@minimusrh/dominio";
 import type {
   Catalogo,
   Competencia,
@@ -10,6 +9,9 @@ import type {
   VersaoRegra,
   VersaoRubrica,
 } from "@minimusrh/dominio";
+import { versaoVigente } from "@minimusrh/dominio";
+import { RubricaNaoResolvidaErro } from "./rubrica-nao-resolvida-erro.js";
+import { ResolucaoTemporal } from "./resolucao-temporal.js";
 
 // resolucao.ts — dado o conjunto bruto de regras (todas as versões, agrupadas por
 // RegraChave) e o catálogo de rubricas, resolve para um (competencia, tipoFolha, corte) as
@@ -19,23 +21,20 @@ import type {
 // "todas as derivações" de antemão — a resolução delas é sob demanda, por chave, dentro de
 // contexto-impl.ts quando uma regra efetivamente lê `ctx.derivacao(chave)`. Decisão
 // registrada em DECISOES-IMPLEMENTACAO.md.
-export interface ResolucaoTemporal {
-  readonly regrasResolvidas: readonly VersaoRegra[];
-  readonly rubricasResolvidas: ReadonlyMap<RubricaChave, VersaoRubrica>;
-}
+
 
 /**
- * Uma regra resolvida aponta (`produz`) para uma rubrica ausente do catálogo, ou presente
- * mas sem versão vigente na mesma data — publicação inconsistente (regra vigente para uma
- * rubrica que não está). Não é um caso do playbook para `resolucao.ts`; decisão: lançar,
- * não devolver silenciosamente uma resolução incompleta (DECISOES-IMPLEMENTACAO.md).
+ * TODO: Descrição
+ * 
+ * Não tem estado, não vira classe.
+ * 
+ * @param regras 
+ * @param rubricas 
+ * @param competencia 
+ * @param tipoFolha 
+ * @param corte 
+ * @returns 
  */
-export class ErroRubricaNaoResolvida extends Error {
-  constructor(readonly rubrica: RubricaChave) {
-    super(`regra vigente produz a rubrica '${rubrica}', mas essa rubrica não tem versão vigente no catálogo`);
-  }
-}
-
 export function resolverParaExecucao(
   regras: ReadonlyMap<RegraChave, readonly VersaoRegra[]>,
   rubricas: Catalogo<RubricaChave, Rubrica>,
@@ -59,7 +58,7 @@ export function resolverParaExecucao(
     if (rubricasResolvidas.has(regra.produz)) continue;
     const rubrica = rubricas.porChave(regra.produz);
     const vigente = rubrica !== undefined ? versaoVigente(rubrica.versoes, em, corte) : undefined;
-    if (vigente === undefined) throw new ErroRubricaNaoResolvida(regra.produz);
+    if (vigente === undefined) throw new RubricaNaoResolvidaErro(regra.produz);
     rubricasResolvidas.set(regra.produz, vigente);
   }
 

@@ -12,7 +12,8 @@ import type {
   VersaoRubrica,
 } from "@minimusrh/dominio";
 import { describe, expect, it } from "vitest";
-import { ErroRubricaNaoResolvida, resolverParaExecucao } from "./resolucao.js";
+import { resolverParaExecucao } from "./resolucao.js";
+import { RubricaNaoResolvidaErro } from "./rubrica-nao-resolvida-erro.js";
 
 const MENSAL = "mensal" as TipoFolhaChave;
 const COMPETENCIA = Competencia.de(2026, 3); // dataReferencia() === '2026-03-31'
@@ -126,7 +127,7 @@ describe("resolverParaExecucao", () => {
     const rubricas = catalogoRubricas([]);
 
     expect(() => resolverParaExecucao(regras, rubricas, COMPETENCIA, MENSAL, CORTE_TARDE)).toThrow(
-      ErroRubricaNaoResolvida,
+      RubricaNaoResolvidaErro,
     );
   });
 
@@ -138,7 +139,7 @@ describe("resolverParaExecucao", () => {
     ]);
 
     expect(() => resolverParaExecucao(regras, rubricas, COMPETENCIA, MENSAL, CORTE_TARDE)).toThrow(
-      ErroRubricaNaoResolvida,
+      RubricaNaoResolvidaErro,
     );
   });
 
