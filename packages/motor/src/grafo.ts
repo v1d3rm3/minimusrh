@@ -93,6 +93,15 @@ function dependenciasDe(
  * ou um ErroCiclo com o caminho completo. Playbook dá a assinatura `montarGrafo(regras)`
  * sem `rubricas` — mas resolver arestas por CLASSIFICAÇÃO exige saber quais classificações
  * cada rubrica carrega, então a assinatura foi estendida (DECISOES-IMPLEMENTACAO.md).
+ * 
+ * Tem o objetivo de montar um grafo de dependências entre rubricas, com as seguintes responsabilidades:
+ * 
+ * 1. **Definir a ordem de execução das regras.** Pois existem regras que dependem de rubricas que são
+ * produzidas por outras regras.
+ * 2. **Resolve dependências por classificação.** Se uma regra consome uma classificação, ela depende de todas as rubricas que possuem essa classificação.
+ * 3. **Detectar ciclos de dependência.** Se houver um ciclo, a função retorna um objeto `ErroCiclo` com o caminho completo do ciclo.
+ * 4. **Garantir que cada rubrica seja produzida por apenas uma regra.** Se houver mais de uma regra produzindo a mesma rubrica, lança uma exceção `ErroRubricaProduzidaPorMaisDeUmaRegra`.
+ * 
  */
 export function montarGrafo(
   regras: readonly VersaoRegra[],

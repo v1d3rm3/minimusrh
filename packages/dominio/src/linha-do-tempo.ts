@@ -10,8 +10,7 @@ import { HistoriaId, TipoFatoChave } from "./tipos.js";
 export interface LinhaDoTempo {
   readonly historiaId: HistoriaId;
   readonly corte: DataRegistro;
-
-  /** O fato mais recente (em efeito) do tipo, valendo na data — a regra de ouro da Decisão 2. */
+  
   vigenteEm<C>(tipo: TipoFatoChave, em: DataEfeito): Fato<C> | undefined;
   todosDoTipo<C>(tipo: TipoFatoChave): readonly Fato<C>[];   // já sem os substituídos
   aberturaDaHistoria(): Fato;

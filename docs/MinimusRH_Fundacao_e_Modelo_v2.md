@@ -283,6 +283,14 @@ No sistema, isso é **um único ato**: publicar nova versão da regra com data d
 
 O mesmo mecanismo cobre o retroativo por **fato** (a promoção do Victor com efeito em fevereiro, registrada em julho): nenhuma diferença estrutural entre "regra mudou retroativamente" e "fato chegou atrasado".
 
+**Isolamento entre a competência corrente e a competência de origem (coexistência da mesma rubrica na folha):**
+
+Um servidor pode receber, na mesma folha (ex.: `07/2026`), a rubrica `auxilio_saude` referente ao mês corrente (`07/2026`) **e** a mesma rubrica `auxilio_saude` referente a um pagamento atrasado (`03/2026`). Três invariantes governam essa coexistência:
+
+1. **O grafo de cálculo nunca mistura competências**: dentro de uma execução de `calcularFolha`, a invariante `1 rubrica = 1 regra produtora = 1 valor` permanece intacta. O atrasado de `03/2026` **não** entra no mapa de rubricas calculadas da execução de `07/2026` — se entrasse, contaminaria indevidamente bases do mês corrente (inflando terço de férias de julho, distorcendo faixas progressivas de previdência ou provocando abate-teto injusto pela soma de dois meses). Todo o cálculo do atrasado (e seus reflexos em previdência, teto etc.) ocorre na execução isolada do grafo da competência `03/2026`.
+2. **A junção ocorre apenas na materialização da folha (`RegistroCalculo`)**: a folha de `07/2026` persiste os registros da sua própria execução (`competenciaOrigem = 07/2026`, ou implícita quando igual à da folha) ao lado dos registros das diferenças apuradas de competências anteriores (`competenciaOrigem = 03/2026`). A chave lógica de um registro dentro de uma folha passa a ser `(historiaId, rubrica, competenciaOrigem)`.
+3. **Dedução de diferenças já pagas**: uma vez que a folha de `07/2026` fecha pagando a diferença de `03/2026`, futuras apurações sobre `03/2026` (em `08/2026`, por exemplo) consideram como "já pago" para `03/2026` a soma do registro original da folha de `03/2026` mais todas as diferenças com `competenciaOrigem = 03/2026` seladas em folhas fechadas até o corte, evitando pagamento em duplicidade.
+
 ### 5.4 Consolidação entre folhas (folhas que enxergam outras folhas)
 
 Casos reais que exigem que uma folha veja o resultado de outras: abate-teto (soma do que a pessoa recebeu no mês em todas as folhas), margem consignável (líquido de referência), médias de rubricas variáveis (13º, férias). O desenho segue a fundação — nenhum mecanismo estruturalmente novo:

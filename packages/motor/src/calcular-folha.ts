@@ -1,28 +1,22 @@
 import { Dinheiro } from "@minimusrh/dominio";
 import type {
-  Catalogo,
   Classificacao,
-  Competencia,
   DataEfeito,
-  DataRegistro,
   FatoId,
-  FolhaId,
   FonteExplicacao,
   HistoriaId,
   LinhaDoTempo,
   NoExplicacao,
-  RegistroDeDerivacoes,
   RegraChave,
   RegistroCalculo,
-  Rubrica,
   RubricaChave,
-  TipoFolhaChave,
   VersaoRegra,
 } from "@minimusrh/dominio";
-import { type LeitorDeJanelas, type ParcelaClassificacao, type ProvenienciaDerivacao, criarContexto } from "./contexto-impl.js";
+import { type ParcelaClassificacao, type ProvenienciaDerivacao, criarContexto } from "./contexto-impl.js";
 import { instrumentar, type Leitura } from "./contexto-instrumentado.js";
 import { montarGrafo, type ErroCiclo } from "./grafo.js";
 import { resolverParaExecucao } from "./resolucao/resolucao.js";
+import { EntradaCalculoFolha } from "./calcular-folha/entrada-calculo-folha.js";
 
 // calcular-folha.ts — a função central do motor (Fundacao §5.2), PURA: nenhuma leitura de
 // relógio, nenhum I/O. Toda referência temporal chega em `entrada` (Regra Global #2 do
@@ -42,18 +36,6 @@ export interface ResultadoCalculo {
   readonly registros: readonly RegistroCalculo[];
   readonly naoAplicaveis: readonly NaoAplicavel[];
   readonly erros: readonly ErroCalculoFolha[];
-}
-
-export interface EntradaCalculoFolha {
-  readonly folhaId: FolhaId;
-  readonly competencia: Competencia;
-  readonly tipoFolha: TipoFolhaChave;
-  readonly corte: DataRegistro;
-  readonly historias: readonly LinhaDoTempo[];
-  readonly regras: ReadonlyMap<RegraChave, readonly VersaoRegra[]>;
-  readonly rubricas: Catalogo<RubricaChave, Rubrica>;
-  readonly derivacoes: RegistroDeDerivacoes;
-  readonly leitorJanelas: LeitorDeJanelas;
 }
 
 /**

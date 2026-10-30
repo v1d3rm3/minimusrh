@@ -316,3 +316,34 @@ pela mesma subtração.
   1.200,00; fevereiro = 16/30 × 1.200,00 = 640,00; previdência = 14% da diferença, porque a
   base já está na faixa marginal (89,60 e 168,00). Quando as tabelas reais chegarem, os
   números mudam e a proporção continua.
+
+---
+
+## 18. Coexistência de rubrica corrente e atrasada na mesma folha (desenho para o lançamento de diferenças)
+
+**Contexto:** um servidor pode receber na mesma folha (ex.: `07/2026`) uma rubrica referente ao
+mês corrente (`auxilio_saude` de `07/2026`) e a **mesma rubrica** referente a uma competência
+anterior (`auxilio_saude` atrasado de `03/2026`). Surgiu a dúvida: isso exigiria que mais de
+uma regra produzisse a mesma rubrica dentro de `motor::calcularFolha`, ou que o valor atrasado
+entrasse no contexto da folha corrente?
+
+**Decisão:** **Não.** O cálculo de cada competência permanece estritamente isolado, e `motor`
+mantém a invariante `1 rubrica = 1 regra produtora` por execução de `calcularFolha`. Quando a
+materialização de diferenças em folha (pós-MVP, #15) for implementada, ela seguirá três regras:
+
+1. **Isolamento de execução no `motor`:** o valor e os reflexos (previdência, teto etc.) do
+   atrasado são computados exclusivamente na execução de `calcularFolha` da **competência de
+   origem** (`03/2026`), via `apurar-diferencas.ts`. Eles **nunca** entram em
+   `rubricasCalculadas` da execução da competência corrente (`07/2026`), evitando contaminar
+   bases do mês corrente (ex.: terço de férias, faixas progressivas ou abate-teto do mês).
+2. **Discriminador `competenciaOrigem` em `RegistroCalculo`:** as diferenças apuradas entram na
+   folha corrente/suplementar apenas como linhas adicionais de `RegistroCalculo`, identificadas
+   por `competenciaOrigem?: Competencia` (ausente ou igual à competência da folha para os
+   registros do próprio mês; preenchida com `03/2026` para os lançamentos retroativos). A chave
+   natural de um registro dentro de uma folha passa de `(historiaId, rubrica)` para
+   `(historiaId, rubrica, competenciaOrigem)` (afetando `serializacao.ts`, `diferencasEntre` e
+   `gabarito_legado`).
+3. **Abatimento de diferenças já pagas:** ao apurar novamente uma competência passada `C` sob um
+   corte futuro, o `valorPago` referente a `C` deve somar o registro original da folha fechada
+   de `C` + os registros com `competenciaOrigem = C` já selados em folhas posteriores fechadas
+   até o corte, impedindo que a mesma diferença seja paga duas vezes.

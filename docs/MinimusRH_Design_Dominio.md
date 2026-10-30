@@ -534,6 +534,8 @@ export interface RegistroCalculo {
 }
 ```
 
+*Horizonte anotado (lançamento de diferenças retroativas, Fundação §5.3):* quando diferenças apuradas de competências passadas forem materializadas como linhas em folha corrente ou suplementar, `RegistroCalculo` ganhará `readonly competenciaOrigem?: Competencia`, permitindo coexistirem na mesma folha a rubrica do mês corrente e a mesma rubrica referente à competência atrasada (calculada isoladamente no grafo da competência de origem).
+
 ---
 
 ## 10. O que NÃO está no `dominio` (e onde está)
