@@ -1,4 +1,4 @@
-import { RubricaChave } from "@minimusrh/dominio";
+ import { RubricaChave } from "@minimusrh/dominio";
 
 /**
  * Uma regra resolvida aponta (`produz`) para uma rubrica ausente do catálogo, ou presente

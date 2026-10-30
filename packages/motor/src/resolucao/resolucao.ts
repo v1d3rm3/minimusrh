@@ -13,20 +13,10 @@ import { versaoVigente } from "@minimusrh/dominio";
 import { RubricaNaoResolvidaErro } from "./rubrica-nao-resolvida-erro.js";
 import { ResolucaoTemporal } from "./resolucao-temporal.js";
 
-// resolucao.ts — dado o conjunto bruto de regras (todas as versões, agrupadas por
-// RegraChave) e o catálogo de rubricas, resolve para um (competencia, tipoFolha, corte) as
-// versões VIGENTES via `versaoVigente` do dominio — a fonte ÚNICA de semântica temporal
-// (Fundacao §5.2 passo 3; Design §11 decisão 8). Derivações NÃO são pré-resolvidas aqui:
-// `RegistroDeDerivacoes` só expõe `porChave`, sem `todos()`, então não há como enumerar
-// "todas as derivações" de antemão — a resolução delas é sob demanda, por chave, dentro de
-// contexto-impl.ts quando uma regra efetivamente lê `ctx.derivacao(chave)`. Decisão
-// registrada em DECISOES-IMPLEMENTACAO.md.
-
-
 /**
- * TODO: Descrição
- * 
- * Não tem estado, não vira classe.
+ * O catálogo de rubricas e regras são conjuntos de objetos desorganizados e, às vezes, interdependentes. Esta função tem o objetivo
+ * de resolver as versões de cada um desses objetos para uma determinada competência e folha para que possam ser utilizados no 
+ * cálculo da folha.
  * 
  * @param regras 
  * @param rubricas 
