@@ -80,9 +80,10 @@ flowchart TD
 
 ### Marcos validados
 - **Marco 2 — Retroatividade (teste de fogo):** validado no portão humano em **24/10/2026**. A apuração de diferenças é duas execuções da `calcularFolha` e uma subtração, sem lógica de cálculo nova e sem alterar `dominio`, `motor` nem `persistencia`. A fundação está provada em código.
+- **Módulo 7 — Importador do legado (peça 1 do Marco 3):** aprovado no portão humano em **03/11/2026**. O Marco 3 segue incompleto, pois o harness de sombra está suspenso.
 
 ### Componentes previstos nos próximos marcos do Roteiro
-- **Harness de Sombra (Marcos 3–4):** batimento automatizado de contracheques centavo a centavo contra o gabarito importado do sistema legado.
+- **Harness de Sombra (Marcos 3–4):** batimento automatizado de contracheques centavo a centavo contra o gabarito importado do sistema legado. *Suspenso desde 03/11/2026; o projeto evolui por necessidade.*
 - **Compilador da DSL (`@minimusrh/dsl` — Marco 5):** linguagem declarativa em português para autoria de regras de cálculo que compila para o contrato `VersaoRegra` de `@minimusrh/dominio`.
 - **API (`apps/api` — Pós-validação):** casca HTTP em NestJS sobre os serviços de aplicação (única camada autorizada a consultar o relógio para carimbar `dataRegistro`).
 

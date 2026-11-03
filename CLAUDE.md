@@ -19,7 +19,9 @@ Módulos concluídos (todos em `packages/` e registrados em `rush.json`):
 
 O **Módulo 6, retroatividade (Marco 2, o "teste de fogo")**, está implementado no `app-folha` (`apurar-diferencas.ts`, `alcance-retroativo.ts`, `rushx demo:retroativo`) e passou no portão humano em 24/10/2026 (data registrada no README).
 
-O **Módulo 7, `importador-legado` (Marco 3)**, está implementado (CLI `rushx importar`, layout em `docs/layout-importacao.md`, tabelas de importação na migração `0008` de `persistencia`) e aguarda o portão humano: revisar o `DECISOES-IMPLEMENTACAO.md` do pacote (#1–#13) e a #11 de `persistencia`. Só então vem o Módulo 8 (`harness`). Consulte o playbook para saber o escopo e o portão humano de cada módulo.
+O **Módulo 7, `importador-legado` (Marco 3)**, está implementado (CLI `rushx importar`, layout em `docs/layout-importacao.md`, tabelas de importação na migração `0008` de `persistencia`) e passou no portão humano em 03/11/2026 (data registrada no README). O Marco 3 não está completo, porque o harness, que é a outra peça dele, está suspenso.
+
+**Direção atual (desde 03/11/2026):** o batimento com o legado (Módulos 8 `harness` e 9 ampliação de regras) está suspenso. O projeto evolui por necessidade, conforme o humano indicar, e não pela ordem do playbook. Não proponha o próximo módulo do playbook como passo seguinte. O playbook continua sendo a referência de escopo, regras globais e portões quando um módulo for retomado. A tabela `gabarito_legado` fica sem consumidor até o batimento voltar. Sem harness, nada valida os valores contra a realidade (o golden test garante reprodutibilidade, não correção), então regras novas devem vir com um caso pequeno conferido à mão.
 
 O **golden test de reprodutibilidade** (`packages/app-folha/src/golden-reprodutibilidade.integracao.test.ts`, arquivo de referência em `packages/app-folha/golden/`) é o teste mais importante do repositório. Nunca o desligue nem o regrave só "para passar". A regravação consciente é feita com `ATUALIZAR_GOLDEN=1 rushx test`. `apps/` continua vazio; a `api` (NestJS) só entra no Módulo 11.
 
