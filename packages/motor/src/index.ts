@@ -21,8 +21,10 @@ export {
   type LeituraRubrica, type Violacao
 } from "./contexto-instrumentado.js";
 
-export {
-  calcularFolha, type EntradaCalculoFolha, type ErroCalculoFolha, type NaoAplicavel, type ResultadoCalculo
-} from "./calcular-folha.js";
+export { calcularFolha } from "./calcular-folha/calcular-folha.js";
+export { type EntradaCalculoFolha } from "./calcular-folha/entrada-calculo-folha.js";
+export { type ResultadoCalculoFolha } from "./calcular-folha/resultado-calculo-folha.js";
+export { type NaoAplicavelResultadoCalculoFolha } from "./calcular-folha/nao-aplicavel-resultado-calculo-folha.js";
+export { type ErroCalculoFolha } from "./calcular-folha/erro-calculo-folha.js";
 
 export { transitar, type ErroTransicao } from "./ciclo-folha.js";

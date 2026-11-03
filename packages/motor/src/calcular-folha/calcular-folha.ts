@@ -7,43 +7,22 @@ import type {
   HistoriaId,
   LinhaDoTempo,
   NoExplicacao,
-  RegraChave,
   RegistroCalculo,
   RubricaChave,
   VersaoRegra,
 } from "@minimusrh/dominio";
-import { type ParcelaClassificacao, type ProvenienciaDerivacao, criarContexto } from "./contexto-impl.js";
-import { instrumentar, type Leitura } from "./contexto-instrumentado.js";
-import { montarGrafo, type ErroCiclo } from "./grafo.js";
-import { resolverParaExecucao } from "./resolucao/resolucao.js";
-import { EntradaCalculoFolha } from "./calcular-folha/entrada-calculo-folha.js";
-
-// calcular-folha.ts — a função central do motor (Fundacao §5.2), PURA: nenhuma leitura de
-// relógio, nenhum I/O. Toda referência temporal chega em `entrada` (Regra Global #2 do
-// playbook).
-
-export interface NaoAplicavel {
-  readonly historiaId: HistoriaId;
-  readonly regra: RegraChave;
-  readonly versao: number;
-}
-
-export type ErroCalculoFolha =
-  | { readonly tipo: "ciclo"; readonly erro: ErroCiclo }
-  | { readonly tipo: "excecao"; readonly historiaId: HistoriaId; readonly regra: RegraChave; readonly mensagem: string };
-
-export interface ResultadoCalculo {
-  readonly registros: readonly RegistroCalculo[];
-  readonly naoAplicaveis: readonly NaoAplicavel[];
-  readonly erros: readonly ErroCalculoFolha[];
-}
+import { type ParcelaClassificacao, type ProvenienciaDerivacao, criarContexto } from "../contexto-impl.js";
+import { instrumentar, type Leitura } from "../contexto-instrumentado.js";
+import { montarGrafo } from "../grafo.js";
+import { resolverParaExecucao } from "../resolucao/resolucao.js";
+import { EntradaCalculoFolha } from "./entrada-calculo-folha.js";
+import { ResultadoCalculoFolha } from "./resultado-calculo-folha.js";
+import { NaoAplicavelResultadoCalculoFolha } from "./nao-aplicavel-resultado-calculo-folha.js";
+import { ErroCalculoFolha } from "./erro-calculo-folha.js";
 
 /**
- * §5.2 passo 1: uma história participa se já abriu (dataEfeito da abertura <= referência) e
- * ainda não encerrou (sem encerramento, ou encerramento com dataEfeito > referência).
- * `situacao_funcional = ativo`, citado no conceitual como EXEMPLO, é uma derivação da ALRN
- * — motor não pode conhecê-la (Regra Global #3). Mecanismo genérico equivalente, só com os
- * métodos estruturais de LinhaDoTempo: decisão registrada em DECISOES-IMPLEMENTACAO.md.
+ * Retorna verdadeiro caose a linha do tempo tenha a dataEfeito da abertura menor ou igual à referência 
+ * e a dataEfeito do encerramento seja maior que a referência (ou não haja encerramento).
  */
 function participa(linha: LinhaDoTempo, dataReferencia: DataEfeito): boolean {
   const abertura = linha.aberturaDaHistoria();
@@ -54,8 +33,8 @@ function participa(linha: LinhaDoTempo, dataReferencia: DataEfeito): boolean {
 }
 
 /**
- * `regra.escopo` é a guarda "individual vs. global" (Design §3.7) — decidida por história,
- * então não faz parte de `resolucao.ts` (que resolve uma vez, para a folha inteira).
+ * Verifica se a regra se aplica à história. Uma regra global se aplica a todas as histórias; uma regra com escopo 
+ * de história só se aplica àquela história.
  */
 function aplicavelAHistoria(regra: VersaoRegra, historiaId: HistoriaId): boolean {
   return regra.escopo.tipo === "global" || regra.escopo.historiaId === historiaId;
@@ -150,7 +129,13 @@ function mensagemDeErro(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-export function calcularFolha(entrada: EntradaCalculoFolha): ResultadoCalculo {
+/**
+ * A função central do motor. É uma funçãoi pura, ou seja, nenhuma leitura de relógio, nenhum I/O. 
+ * Toda referência temporal chega na `entrada`
+ * @param entrada @type {EntradaCalculoFolha} com todos as variáveis necessárias para o cálculo
+ * @returns 
+ */
+export function calcularFolha(entrada: EntradaCalculoFolha): ResultadoCalculoFolha {
   const dataReferencia = entrada.competencia.dataReferencia();
 
   const resolucao = resolverParaExecucao(
@@ -167,7 +152,7 @@ export function calcularFolha(entrada: EntradaCalculoFolha): ResultadoCalculo {
   }
 
   const registros: RegistroCalculo[] = [];
-  const naoAplicaveis: NaoAplicavel[] = [];
+  const naoAplicaveis: NaoAplicavelResultadoCalculoFolha[] = [];
   const erros: ErroCalculoFolha[] = [];
 
   for (const linha of entrada.historias) {
