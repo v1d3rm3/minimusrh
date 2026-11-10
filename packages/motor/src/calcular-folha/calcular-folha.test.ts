@@ -23,8 +23,9 @@ import type {
   VersaoRubrica,
 } from "@minimusrh/dominio";
 import { describe, expect, it } from "vitest";
-import { calcularFolha, type EntradaCalculoFolha } from "./calcular-folha.js";
-import type { LeitorDeJanelas } from "./contexto-impl.js";
+import { calcularFolha } from "./calcular-folha.js";
+import type { LeitorDeJanelas } from "../contexto-impl.js";
+import { EntradaCalculoFolha } from "./entrada-calculo-folha.js";
 
 const FOLHA_ID = "folha-1" as FolhaId;
 const MENSAL = "mensal" as TipoFolhaChave;

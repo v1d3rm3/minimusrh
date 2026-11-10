@@ -27,4 +27,5 @@ export { type ResultadoCalculoFolha } from "./calcular-folha/resultado-calculo-f
 export { type NaoAplicavelResultadoCalculoFolha } from "./calcular-folha/nao-aplicavel-resultado-calculo-folha.js";
 export { type ErroCalculoFolha } from "./calcular-folha/erro-calculo-folha.js";
 
-export { transitar, type ErroTransicao } from "./ciclo-folha.js";
+export { transitar } from "./ciclo-folha/ciclo-folha.js";
+export { ErroTransicaoFolha } from "./ciclo-folha/erro-transicao-folha.js";
