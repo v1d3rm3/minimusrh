@@ -1,6 +1,7 @@
 // index.ts — exports públicos do pacote `motor` (Playbook Módulo 2)
 
-export { ErroRubricaProduzidaPorMaisDeUmaRegra, montarGrafo, type ErroCiclo, type Grafo } from "./grafo.js";
+export { ErroRubricaProduzidaPorMaisDeUmaRegra, montarGrafo, type Grafo } from "./grafo/grafo.js";
+export { GrafoErroCiclo } from "./grafo/grafo-erro-ciclo.js";
 
 export { ResolucaoTemporal } from './resolucao/resolucao-temporal.js';
 export { resolverParaExecucao } from "./resolucao/resolucao.js";

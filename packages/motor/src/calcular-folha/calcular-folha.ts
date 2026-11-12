@@ -13,7 +13,7 @@ import type {
 } from "@minimusrh/dominio";
 import { type ParcelaClassificacao, type ProvenienciaDerivacao, criarContexto } from "../contexto-impl.js";
 import { instrumentar, type Leitura } from "../contexto-instrumentado.js";
-import { montarGrafo } from "../grafo.js";
+import { montarGrafo } from "../grafo/grafo.js";
 import { resolverParaExecucao } from "../resolucao/resolucao.js";
 import { EntradaCalculoFolha } from "./entrada-calculo-folha.js";
 import { ResultadoCalculoFolha } from "./resultado-calculo-folha.js";

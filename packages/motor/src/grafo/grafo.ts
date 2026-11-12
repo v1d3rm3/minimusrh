@@ -1,4 +1,5 @@
 import type { Classificacao, RubricaChave, VersaoRegra, VersaoRubrica } from "@minimusrh/dominio";
+import { GrafoErroCiclo } from "./grafo-erro-ciclo.js";
 
 // grafo.ts (Design §11 decisão? não — playbook Módulo 2): "as dependências são entre
 // rubricas, não entre regras" (Fundacao §5.1). Nó = rubrica PRODUZIDA por uma regra
@@ -8,12 +9,6 @@ export interface Grafo {
   readonly ordem: readonly RubricaChave[]; // ordem topológica: dependências primeiro
   readonly dependencias: ReadonlyMap<RubricaChave, ReadonlySet<RubricaChave>>;
   readonly regraPorRubrica: ReadonlyMap<RubricaChave, VersaoRegra>;
-}
-
-export interface ErroCiclo {
-  readonly erro: "ciclo";
-  readonly caminho: readonly RubricaChave[]; // ex.: [a, b, c, a] — cita o ciclo completo
-  readonly mensagem: string;
 }
 
 /**
@@ -106,7 +101,7 @@ function dependenciasDe(
 export function montarGrafo(
   regras: readonly VersaoRegra[],
   rubricas: ReadonlyMap<RubricaChave, VersaoRubrica>,
-): Grafo | ErroCiclo {
+): Grafo | GrafoErroCiclo {
   const regraPorRubrica = construirRegraPorRubrica(regras);
   const dependencias = new Map<RubricaChave, ReadonlySet<RubricaChave>>();
   for (const regra of regras) {
@@ -124,12 +119,12 @@ type Cor = "branco" | "cinza" | "preto";
 /** DFS clássica com detecção de ciclo por cor (branco/cinza/preto) — caminho completo reconstruído da pilha. */
 function ordenarTopologicamente(
   dependencias: ReadonlyMap<RubricaChave, ReadonlySet<RubricaChave>>,
-): { readonly ordem: readonly RubricaChave[] } | ErroCiclo {
+): { readonly ordem: readonly RubricaChave[] } | GrafoErroCiclo {
   const cores = new Map<RubricaChave, Cor>();
   const pilha: RubricaChave[] = [];
   const ordem: RubricaChave[] = [];
 
-  function visitar(no: RubricaChave): ErroCiclo | undefined {
+  function visitar(no: RubricaChave): GrafoErroCiclo | undefined {
     cores.set(no, "cinza");
     pilha.push(no);
 
